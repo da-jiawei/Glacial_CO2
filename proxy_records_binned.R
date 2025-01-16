@@ -1,5 +1,6 @@
 library(tidyverse)
 library(ggpubr)
+library(readxl)
 theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
               axis.text.y = element_text(margin = margin(r = 0.1, unit = "cm")),
               axis.ticks.length=unit(0.15, "cm"),
@@ -13,8 +14,17 @@ theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
               panel.grid.minor = element_blank(),
               panel.grid.major = element_blank())
 
-# read data
-paleosol = read.csv("data/co2_compilation/paleosol_CO2.csv")
+# read data ----
+# groom paleosol data
+paleosol_ig = read_xlsx("data/co2_compilation/paleosol_interglacial_CO2_da2019.xlsx", sheet = 2)
+paleosol_ig = paleosol_ig[4:nrow(paleosol_ig), c(4, 15)] %>% drop_na()
+names(paleosol_ig) = c("age", "CO2")
+paleosol_ig[] = lapply(paleosol_ig, as.numeric)
+paleosol_ig$age = paleosol_ig$age * 1000
+paleosol_g = read_xlsx("data/Dataset S1.xlsx", sheet = 2)
+paleosol_g = paleosol_g[, c(4, 17)] %>% drop_na()
+names(paleosol_g) = c("age", "CO2")
+# other proxy data
 boron = read.csv("data/co2_compilation/boron_CO2.csv")
 ice_core = read.csv("data/co2_compilation/ice_core_co2.csv")
 blue_ice = read.csv("data/co2_compilation/blue.ice.csv")
@@ -45,7 +55,7 @@ filter_g = function(data, age_column) {
     )
 }
 
-paleosol_g = paleosol %>% filter(period == "G") %>% mutate(age = Age/1000)
+paleosol_g = paleosol_g %>% mutate(age = age/1000)
 boron_g = filter_g(boron, "Age")
 ice_core_g = filter_g(ice_core, "age")
 names(ice_core_g) = c("age", "CO2")
@@ -76,7 +86,7 @@ filter_ig = function(data, age_column) {
       purrr::map_lgl(age, ~ any(. >= interglacial_age_ranges$start & . <= interglacial_age_ranges$end))
     )
 }
-paleosol_ig = paleosol %>% filter(period == "IG") %>% mutate(age = Age/1000)
+paleosol_ig = paleosol_ig %>% mutate(age = age/1000)
 boron_ig = filter_ig(boron, "Age")
 ice_core_ig = filter_ig(ice_core, "age")
 names(ice_core_ig) = c("age", "CO2")
