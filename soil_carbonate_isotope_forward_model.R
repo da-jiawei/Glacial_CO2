@@ -159,7 +159,8 @@ fm = function(vars){
                        "z" = rep(z_m),
                        "ha" = rep(ha),
                        "z.f" = rep(z.f),
-                       "E_s" = rep(E_s))
+                       "E_s" = rep(E_s),
+                       "Rs" = rep(R_PCQ_D))
 }
 
 sens.plot = function(sens.t, var) {
