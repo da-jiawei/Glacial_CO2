@@ -2,7 +2,7 @@ library(tidyverse)
 library(ggpubr)
 source('plot/functions.R')
 set.seed(42)
-nsyth = 10000
+nsyth = 50000
 theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
               axis.text.y = element_text(margin = margin(r = 0.1, unit = "cm")),
               axis.ticks.length=unit(0.15, "cm"),
@@ -98,38 +98,34 @@ dev.off()
 
 # time window mean ----
 ## glacials ----
+# calculating radiative forcing
 co2_g = co2 %>% filter(period == "glacial")
-d18_g = benthic %>% filter(period == "glacial")
-bwt_g = bwt %>% filter(period == "glacial")
-wpwp_g = wpwp %>% filter(period == "glacial")
-r_li_g = filter_g(R_LI, "Age")
-r_li_g = r_li_g %>% mutate(time = assign_time_group(age, 0.3, 2.7)) 
-
-dat_g = data.frame("time" = unique(co2_g$time))
-for (i in 1:nrow(dat_g)) {
-  co2_s = co2_g %>% filter(time == dat_g$time[i])
-  rli_s = r_li_g %>% filter(time == dat_g$time[i])
-  d18_s = d18_g %>% filter(time == dat_g$time[i])
-  bwt_s = bwt_g %>% filter(time == dat_g$time[i])
-  wpwp_s = wpwp_g %>% filter(time == dat_g$time[i])
-  co2_i = sample(co2_s$CO2, nsyth, replace = TRUE)
-  R_LI_i = sample(rli_s$RLI, nsyth, replace = TRUE)
-  ln_co2 = log(co2_i / 278)
-  R_total = 5.35 * ln_co2 + R_LI_i
-  d18_i = sample(d18_s$d18O, nsyth, replace = TRUE)
-  bwt_i = sample(bwt_s$BWT, nsyth, replace = TRUE)
-  sst_i = sample(wpwp_s$SST, nsyth, replace = TRUE)
-  dat_g$lnco2[i] = mean(ln_co2)
-  dat_g$lnco2.sd[i] = sd(ln_co2)
-  dat_g$r[i] = mean(R_total)
-  dat_g$r.sd[i] = sd(R_total)
-  dat_g$d18[i] = mean(d18_i)
-  dat_g$d18.sd[i] = sd(d18_i)
-  dat_g$bwt[i] = mean(bwt_i)
-  dat_g$bwt.sd[i] = sd(bwt_i)
-  dat_g$sst[i] = mean(sst_i)
-  dat_g$sst.sd[i] = sd(sst_i)
+r_li_g = filter_g(R_LI, "Age") %>% mutate(time = assign_time_group(age, 0.3, 2.7))
+forcing_g = data.frame("time" = unique(co2_g$time))
+for (i in 1:nrow(forcing_g)) {
+  co2_sub = co2_g %>% filter(time == forcing_g$time[i])
+  co2_s = sample(co2_sub$CO2, nsyth, replace = TRUE)
+  rli_sub = r_li_g %>% filter(time == forcing_g$time[i])
+  rli_s = sample(rli_sub$RLI, nsyth, replace = TRUE)
+  lnco2 = log(co2_s / 278)
+  r_total = 5.35 * lnco2 + rli_s
+  forcing_g$lnco2[i] = mean(lnco2)
+  forcing_g$lnco2.sd[i] = sd(lnco2)
+  forcing_g$r[i] = mean(r_total)
+  forcing_g$r.sd[i] = sd(r_total)
 }
+d18_g = benthic %>%
+  filter(period == "glacial") %>% group_by(time) %>%
+  summarise(d18 = mean(d18O), d18.sd = sd(d18O))
+bwt_g = bwt %>% 
+  filter(period == "glacial") %>% group_by(time) %>%
+  summarise(bwt = mean(BWT), bwt.sd = sd(BWT))
+wpwp_g = wpwp %>% 
+  filter(period == "glacial") %>% group_by(time) %>%
+  summarise(sst = mean(SST), sst.sd = sd(SST))
+
+dat_list = list(forcing_g, d18_g, bwt_g, wpwp_g)
+dat_g = reduce(dat_list, full_join, by = "time")
 
 p1 = ggplot(dat_g, aes(x = lnco2, y = d18)) +
   geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
@@ -208,37 +204,32 @@ ggsave("figures/Fig_3_climate_sensitivity_glacials.pdf", width = 7.2, height = 5
 
 ## interglacials ----
 co2_ig = co2 %>% filter(period == "interglacial")
-d18_ig = benthic %>% filter(period == "interglacial")
-bwt_ig = bwt %>% filter(period == "interglacial")
-wpwp_ig = wpwp %>% filter(period == "interglacial")
-r_li_ig = filter_ig(R_LI, "Age") # function filter_ig() in Fig.2 file
-r_li_ig = r_li_ig %>% mutate(time = assign_time_group(age, 0.3, 2.7)) # function assign_time_group in Fig.2 file
-
-dat_ig = data.frame("time" = unique(co2_ig$time))
-for (i in 1:nrow(dat_ig)) {
-  co2_s = co2_ig %>% filter(time == dat_ig$time[i])
-  rli_s = r_li_ig %>% filter(time == dat_ig$time[i])
-  d18_s = d18_ig %>% filter(time == dat_ig$time[i])
-  bwt_s = bwt_ig %>% filter(time == dat_ig$time[i])
-  wpwp_s = wpwp_ig %>% filter(time == dat_ig$time[i])
-  co2_i = sample(co2_s$CO2, nsyth, replace = TRUE)
-  R_LI_i = sample(rli_s$RLI, nsyth, replace = TRUE)
-  ln_co2 = log(co2_i / 278)
-  R_total = 5.35 * ln_co2 + R_LI_i
-  d18_i = sample(d18_s$d18O, nsyth, replace = TRUE)
-  bwt_i = sample(bwt_s$BWT, nsyth, replace = TRUE)
-  sst_i = sample(wpwp_s$SST, nsyth, replace = TRUE)
-  dat_ig$lnco2[i] = mean(ln_co2)
-  dat_ig$lnco2.sd[i] = sd(ln_co2)
-  dat_ig$r[i] = mean(R_total)
-  dat_ig$r.sd[i] = sd(R_total)
-  dat_ig$d18[i] = mean(d18_i)
-  dat_ig$d18.sd[i] = sd(d18_i)
-  dat_ig$bwt[i] = mean(bwt_i)
-  dat_ig$bwt.sd[i] = sd(bwt_i)
-  dat_ig$sst[i] = mean(sst_i)
-  dat_ig$sst.sd[i] = sd(sst_i)
+r_li_ig = filter_ig(R_LI, "Age") %>% mutate(time = assign_time_group(age, 0.3, 2.7))
+forcing_ig = data.frame("time" = unique(co2_ig$time))
+for (i in 1:nrow(forcing_ig)) {
+  co2_sub = co2_ig %>% filter(time == forcing_ig$time[i])
+  co2_s = sample(co2_sub$CO2, nsyth, replace = TRUE)
+  rli_sub = r_li_ig %>% filter(time == forcing_ig$time[i])
+  rli_s = sample(rli_sub$RLI, nsyth, replace = TRUE)
+  lnco2 = log(co2_s / 278)
+  r_total = 5.35 * lnco2 + rli_s
+  forcing_ig$lnco2[i] = mean(lnco2)
+  forcing_ig$lnco2.sd[i] = sd(lnco2)
+  forcing_ig$r[i] = mean(r_total)
+  forcing_ig$r.sd[i] = sd(r_total)
 }
+d18_ig = benthic %>%
+  filter(period == "interglacial") %>% group_by(time) %>%
+  summarise(d18 = mean(d18O), d18.sd = sd(d18O))
+bwt_ig = bwt %>% 
+  filter(period == "interglacial") %>% group_by(time) %>%
+  summarise(bwt = mean(BWT), bwt.sd = sd(BWT))
+wpwp_ig = wpwp %>% 
+  filter(period == "interglacial") %>% group_by(time) %>%
+  summarise(sst = mean(SST), sst.sd = sd(SST))
+
+dat_list = list(forcing_ig, d18_ig, bwt_ig, wpwp_ig)
+dat_ig = reduce(dat_list, full_join, by = "time")
 
 p1 = ggplot(dat_ig, aes(x = lnco2, y = d18)) +
   geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#D94801", fill = "#D94801") +
@@ -354,15 +345,23 @@ write.csv(sens.co2, "output/sens_co2_pvalue.csv")
 write.csv(sens, "output/sens_pvalue.csv")
 
 
-# pdfs ----
+
+# PDFs ----
 slope = data.frame(matrix(nrow = nsyth, ncol = 6))
 names(slope) = c("d18_g", "bwt_g", "wpwp_g", "d18_ig", "bwt_ig", "wpwp_ig")
 time = unique(co2_g$time)
+# based on raw data ----
+d18_g = benthic %>% filter(period == "glacial")
+bwt_g = bwt %>% filter(period == "glacial")
+wpwp_g = wpwp %>% filter(period == "glacial")
+d18_ig = benthic %>% filter(period == "interglacial")
+bwt_ig = bwt %>% filter(period == "interglacial")
+wpwp_ig = wpwp %>% filter(period == "interglacial")
 for (i in 1:nsyth) {
   subgroup = data.frame(matrix(nrow = length(time), ncol = 8))
   names(subgroup) = c("df.g", "d18.g", "bwt.g", "sst.g", "df.ig", "d18.ig", "bwt.ig", "sst.ig")
   for (p in 1:length(time)) {
-    co2_s = co2_g %>% filter(time == time[1])
+    co2_s = co2_g %>% filter(time == time[p])
     rli_s = r_li_g %>% filter(time == time[p])
     d18_s = d18_g %>% filter(time == time[p])
     bwt_s = bwt_g %>% filter(time == time[p])
@@ -382,25 +381,62 @@ for (i in 1:nsyth) {
     subgroup$sst.ig[p] = sample(wpwp$SST, 1)
   }
   m_d18 = lm(d18.g ~ df.g, data = subgroup)
-  # slope$d18_g[i] = ifelse(summary(m_d18)$coefficients[2, "Pr(>|t|)"]<0.05, m_d18$coefficients[2], NA)
-  slope$d18_g[i] = m_d18$coefficients[2]
   m_bwt = lm(bwt.g ~ df.g, data = subgroup)
-  # slope$bwt_g[i] = ifelse(summary(m_bwt)$coefficients[2, "Pr(>|t|)"]<0.05, m_bwt$coefficients[2], NA)
-  slope$bwt_g[i] = m_bwt$coefficients[2]
+  m_sst = lm(sst.g ~ df.g, data = subgroup)
+  slope$d18_g[i] = ifelse(summary(m_d18)$coefficients[2, "Pr(>|t|)"]<0.05, m_d18$coefficients[2], NA)
+  slope$bwt_g[i] = ifelse(summary(m_bwt)$coefficients[2, "Pr(>|t|)"]<0.05, m_bwt$coefficients[2], NA)
+  slope$wpwp_g[i] = ifelse(summary(m_sst)$coefficients[2, "Pr(>|t|)"]<0.05, m_sst$coefficients[2], NA)
+  # slope$d18_g[i] = m_d18$coefficients[2]
+  # slope$bwt_g[i] = m_bwt$coefficients[2]
+  # slope$wpwp_g[i] = m_sst$coefficients[2]
+  m_d18 = lm(d18.ig ~ df.ig, data = subgroup)
+  m_bwt = lm(bwt.ig ~ df.ig, data = subgroup)
+  m_sst = lm(sst.ig ~ df.ig, data = subgroup)
+  slope$d18_ig[i] = ifelse(summary(m_d18)$coefficients[2, "Pr(>|t|)"]<0.05, m_d18$coefficients[2], NA)
+  slope$bwt_ig[i] = ifelse(summary(m_bwt)$coefficients[2, "Pr(>|t|)"]<0.05, m_bwt$coefficients[2], NA)
+  slope$wpwp_ig[i] = ifelse(summary(m_sst)$coefficients[2, "Pr(>|t|)"]<0.05, m_sst$coefficients[2], NA)
+  # slope$d18_ig[i] = m_d18$coefficients[2]
+  # slope$bwt_ig[i] = m_bwt$coefficients[2]
+  # slope$wpwp_ig[i] = m_sst$coefficients[2]
+}
+
+# based on mean and sd ----
+for (i in 1:nsyth) {
+  subgroup = data.frame(matrix(nrow = length(time), ncol = 8))
+  names(subgroup) = c("df.g", "d18.g", "bwt.g", "sst.g", "df.ig", "d18.ig", "bwt.ig", "sst.ig")
+  for (p in 1:length(time)) {
+    dat_s = dat_g %>% filter(time == time[p])
+    subgroup$df.g[p] = rnorm(1, dat_s$r, dat_s$r.sd)
+    subgroup$d18.g[p] = rnorm(1, dat_s$d18, dat_s$d18.sd)
+    subgroup$bwt.g[p] = rnorm(1, dat_s$bwt, dat_s$bwt.sd)
+    subgroup$sst.g[p] = rnorm(1, dat_s$sst, dat_s$sst.sd)
+    dat_s = dat_ig %>% filter(time == time[p])
+    subgroup$df.ig[p] = rnorm(1, dat_s$r, dat_s$r.sd)
+    subgroup$d18.ig[p] = rnorm(1, dat_s$d18, dat_s$d18.sd)
+    subgroup$bwt.ig[p] = rnorm(1, dat_s$bwt, dat_s$bwt.sd)
+    subgroup$sst.ig[p] = rnorm(1, dat_s$sst, dat_s$sst.sd)
+  }
+  m_d18 = lm(d18.g ~ df.g, data = subgroup)
+  slope$d18_g[i] = ifelse(summary(m_d18)$coefficients[2, "Pr(>|t|)"]<0.05, m_d18$coefficients[2], NA)
+  # slope$d18_g[i] = m_d18$coefficients[2]
+  m_bwt = lm(bwt.g ~ df.g, data = subgroup)
+  slope$bwt_g[i] = ifelse(summary(m_bwt)$coefficients[2, "Pr(>|t|)"]<0.05, m_bwt$coefficients[2], NA)
+  # slope$bwt_g[i] = m_bwt$coefficients[2]
   m_sst = lm(sst.g ~ df.g, data = subgroup)
   # slope$wpwp_g[i] = ifelse(summary(m_sst)$coefficients[2, "Pr(>|t|)"]<0.05, m_sst$coefficients[2], NA)
   slope$wpwp_g[i] = m_sst$coefficients[2]
   m_d18 = lm(d18.ig ~ df.ig, data = subgroup)
-  # slope$d18_ig[i] = ifelse(summary(m_d18)$coefficients[2, "Pr(>|t|)"]<0.05, m_d18$coefficients[2], NA)
-  slope$d18_ig[i] = m_d18$coefficients[2]
+  slope$d18_ig[i] = ifelse(summary(m_d18)$coefficients[2, "Pr(>|t|)"]<0.05, m_d18$coefficients[2], NA)
+  # slope$d18_ig[i] = m_d18$coefficients[2]
   m_bwt = lm(bwt.ig ~ df.ig, data = subgroup)
-  # slope$bwt_ig[i] = ifelse(summary(m_bwt)$coefficients[2, "Pr(>|t|)"]<0.05, m_bwt$coefficients[2], NA)
-  slope$bwt_ig[i] = m_bwt$coefficients[2]
+  slope$bwt_ig[i] = ifelse(summary(m_bwt)$coefficients[2, "Pr(>|t|)"]<0.05, m_bwt$coefficients[2], NA)
+  # slope$bwt_ig[i] = m_bwt$coefficients[2]
   m_sst = lm(sst.ig ~ df.ig, data = subgroup)
-  # slope$wpwp_ig[i] = ifelse(summary(m_sst)$coefficients[2, "Pr(>|t|)"]<0.05, m_sst$coefficients[2], NA)
-  slope$wpwp_ig[i] = m_sst$coefficients[2]
+  slope$wpwp_ig[i] = ifelse(summary(m_sst)$coefficients[2, "Pr(>|t|)"]<0.05, m_sst$coefficients[2], NA)
+  # slope$wpwp_ig[i] = m_sst$coefficients[2]
 }
 
+# plot ----
 ggplot(slope) +
   geom_density(aes(x = d18_g), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
   geom_density(aes(x = d18_ig), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
@@ -409,7 +445,17 @@ ggplot(slope) +
   theme_bw() + theme +
   # annotate("text", x = -0.75, y = 2, label = expression("Benthic "*delta^"18"*"O")) +
   labs(x = "slope", y = "density") +
-  scale_x_continuous(limits = c(-1, 1))
+  scale_x_continuous(limits = c(-.5, 0))
+
+ggplot(slope) +
+  geom_density(aes(x = bwt_g), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
+  geom_density(aes(x = bwt_ig), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
+  # geom_vline(xintercept = median(slope_bwt_g$bwt_g), color = "#2171B5", size = 1, linetype = "dashed") +
+  # geom_vline(xintercept = median(slope_bwt_ig$bwt_ig), color = "#D94801", size = 1, linetype = "dashed") +
+  theme_bw() + theme +
+  # annotate("text", x = 4, y = 1, label = "BWT") +
+  labs(x = "slope", y = "density") +
+  scale_x_continuous(limits = c(0, 2))
 
 ggplot(slope) +
   geom_density(aes(x = wpwp_g), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
@@ -419,14 +465,4 @@ ggplot(slope) +
   theme_bw() + theme +
   # annotate("text", x = 4, y = 1, label = "BWT") +
   labs(x = "slope", y = "density") +
-  scale_x_continuous(limits = c(-5, 5))
-
-ggplot(slope) +
-  geom_density(aes(x = sst_g), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
-  geom_density(aes(x = sst_ig), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
-  # geom_vline(xintercept = median(slope_bwt_g$bwt_g), color = "#2171B5", size = 1, linetype = "dashed") +
-  # geom_vline(xintercept = median(slope_bwt_ig$bwt_ig), color = "#D94801", size = 1, linetype = "dashed") +
-  theme_bw() + theme +
-  # annotate("text", x = 4, y = 1, label = "BWT") +
-  labs(x = "slope", y = "density") +
-  scale_x_continuous(limits = c(-5, 5))
+  scale_x_continuous(limits = c(0, 1.5))
