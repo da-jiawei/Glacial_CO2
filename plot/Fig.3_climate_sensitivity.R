@@ -2,7 +2,7 @@ library(tidyverse)
 library(ggpubr)
 source('plot/functions.R')
 set.seed(42)
-nsyth = 50000
+nsyth = 10000
 theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
               axis.text.y = element_text(margin = margin(r = 0.1, unit = "cm")),
               axis.ticks.length=unit(0.15, "cm"),
@@ -126,6 +126,7 @@ wpwp_g = wpwp %>%
 
 dat_list = list(forcing_g, d18_g, bwt_g, wpwp_g)
 dat_g = reduce(dat_list, full_join, by = "time")
+write.csv(dat_g, "output/climate_sensitivity_glacial.csv")
 
 p1 = ggplot(dat_g, aes(x = lnco2, y = d18)) +
   geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
@@ -230,6 +231,7 @@ wpwp_ig = wpwp %>%
 
 dat_list = list(forcing_ig, d18_ig, bwt_ig, wpwp_ig)
 dat_ig = reduce(dat_list, full_join, by = "time")
+write.csv(dat_ig, "output/climate_sensitivity_interglacial.csv")
 
 p1 = ggplot(dat_ig, aes(x = lnco2, y = d18)) +
   geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#D94801", fill = "#D94801") +
