@@ -18,7 +18,7 @@ dat$co2.sd = sapply(dat$age, function(age){
 # d18c - S(z) model ----
 # S(z) calculation
 nsyth = 10000
-for (i in 1:nrow(input)) {
+for (i in 1:nrow(dat)) {
   R = rnorm(nsyth, dat$R[i], dat$R.sd[i])
   co2 = rnorm(nsyth, dat$co2[i], dat$co2.sd[i])
   Sz = co2 / R
