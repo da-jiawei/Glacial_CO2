@@ -47,7 +47,7 @@ R_LI.rs = cbind(R_LI$age,
 R_LI.rs = R_LI.rs[order(R_LI.rs[, 1]), ]
 lines(R_LI.rs[, 1], R_LI.rs[, 2], col = pal[5], lwd = 1)
 axis(4, 4 + (tix - min(tix)) / diff(range(tix)), tix)
-mtext(expression("R"[LI]*" (W m"^"-2"*")"), 4, line = 2.5, at = 4.5)
+mtext(expression(Delta*"R"[LI]*" (W m"^"-2"*")"), 4, line = 2.5, at = 4.5)
 
 yext = range(co2$CO2)
 tix = seq(floor(min(yext)-39), 
@@ -101,6 +101,8 @@ dev.off()
 # calculating radiative forcing
 co2_g = co2 %>% filter(period == "glacial")
 r_li_g = filter_g(R_LI, "Age") %>% mutate(time = assign_time_group(age, 0.3, 2.7))
+# land ice changes contribute comparatively less per unit radiative forcing to the global temperature anomalies than the CO2 changes
+r_li_g = r_li_g %>% mutate(RLI = RLI * 0.45) # using a efficacy factor of 0.45 - Stap (2019)
 forcing_g = data.frame("time" = unique(co2_g$time))
 for (i in 1:nrow(forcing_g)) {
   co2_sub = co2_g %>% filter(time == forcing_g$time[i])
@@ -108,7 +110,9 @@ for (i in 1:nrow(forcing_g)) {
   rli_sub = r_li_g %>% filter(time == forcing_g$time[i])
   rli_s = sample(rli_sub$RLI, nsyth, replace = TRUE)
   lnco2 = log(co2_s / 278)
-  r_total = 5.35 * lnco2 + rli_s
+  # conversion factor of 0.67 to account for other the influence of other long-term processes
+  # namely vegetation, aerosol, and non-CO2 greenhouse gas changes
+  r_total = (5.35 * lnco2 + rli_s) * 0.67 
   forcing_g$lnco2[i] = mean(lnco2)
   forcing_g$lnco2.sd[i] = sd(lnco2)
   forcing_g$r[i] = mean(r_total)
@@ -206,6 +210,7 @@ ggsave("figures/Fig_3_climate_sensitivity_glacials.pdf", width = 7.2, height = 5
 ## interglacials ----
 co2_ig = co2 %>% filter(period == "interglacial")
 r_li_ig = filter_ig(R_LI, "Age") %>% mutate(time = assign_time_group(age, 0.3, 2.7))
+r_li_ig = r_li_ig %>% mutate(RLI = RLI * 0.45) # using a efficacy factor of 0.45 - Stap (2019)
 forcing_ig = data.frame("time" = unique(co2_ig$time))
 for (i in 1:nrow(forcing_ig)) {
   co2_sub = co2_ig %>% filter(time == forcing_ig$time[i])
@@ -213,7 +218,7 @@ for (i in 1:nrow(forcing_ig)) {
   rli_sub = r_li_ig %>% filter(time == forcing_ig$time[i])
   rli_s = sample(rli_sub$RLI, nsyth, replace = TRUE)
   lnco2 = log(co2_s / 278)
-  r_total = 5.35 * lnco2 + rli_s
+  r_total = (5.35 * lnco2 + rli_s) * 0.67
   forcing_ig$lnco2[i] = mean(lnco2)
   forcing_ig$lnco2.sd[i] = sd(lnco2)
   forcing_ig$r[i] = mean(r_total)
@@ -346,8 +351,6 @@ sens$wpwp[2] = summary(m_wpwp_ig)$coefficients[2,1]
 write.csv(sens.co2, "output/sens_co2_pvalue.csv")
 write.csv(sens, "output/sens_pvalue.csv")
 
-
-
 # PDFs ----
 slope = data.frame(matrix(nrow = nsyth, ncol = 6))
 names(slope) = c("d18_g", "bwt_g", "wpwp_g", "d18_ig", "bwt_ig", "wpwp_ig")
@@ -363,21 +366,29 @@ for (i in 1:nsyth) {
   subgroup = data.frame(matrix(nrow = length(time), ncol = 8))
   names(subgroup) = c("df.g", "d18.g", "bwt.g", "sst.g", "df.ig", "d18.ig", "bwt.ig", "sst.ig")
   for (p in 1:length(time)) {
-    co2_s = co2_g %>% filter(time == time[p])
-    rli_s = r_li_g %>% filter(time == time[p])
     d18_s = d18_g %>% filter(time == time[p])
     bwt_s = bwt_g %>% filter(time == time[p])
     wpwp_s = wpwp_g %>% filter(time == time[p])
-    subgroup$df.g[p] = 5.35 * log(sample(co2_s$CO2, 1)/278) + sample(rli_s$RLI, 1)
+    # co2_s = co2_g %>% filter(time == time[p])
+    # rli_s = r_li_g %>% filter(time == time[p])
+    # r_co2 = 5.35 * log(sample(co2_s$CO2, 1)/278)
+    # r_li = sample(rli_s$RLI, 1)
+    # subgroup$df.g[p] = (r_co2 + r_li) * 0.67
+    forcing_s = forcing_g %>% filter(time == time[p])
+    subgroup$df.g[p] = rnorm(1, forcing_s$r, forcing_s$r.sd)
     subgroup$d18.g[p] = sample(d18_s$d18O, 1)
     subgroup$bwt.g[p] = sample(bwt$BWT, 1)
     subgroup$sst.g[p] = sample(wpwp$SST, 1)
-    co2_s = co2_ig %>% filter(time == time[p])
-    rli_s = r_li_ig %>% filter(time == time[p])
     d18_s = d18_ig %>% filter(time == time[p])
     bwt_s = bwt_ig %>% filter(time == time[p])
     wpwp_s = wpwp_ig %>% filter(time == time[p])
-    subgroup$df.ig[p] = 5.35 * log(sample(co2_s$CO2, 1)/278) + sample(rli_s$RLI, 1)
+    # co2_s = co2_ig %>% filter(time == time[p])
+    # rli_s = r_li_ig %>% filter(time == time[p])
+    # r_co2 = 5.35 * log(sample(co2_s$CO2, 1)/278)
+    # r_li = sample(rli_s$RLI, 1)
+    # subgroup$df.ig[p] = (r_co2 + r_li) * 0.67
+    forcing_s = forcing_ig %>% filter(time == time[p])
+    subgroup$df.ig[p] = rnorm(1, forcing_s$r, forcing_s$r.sd)
     subgroup$d18.ig[p] = sample(d18_s$d18O, 1)
     subgroup$bwt.ig[p] = sample(bwt$BWT, 1)
     subgroup$sst.ig[p] = sample(wpwp$SST, 1)
@@ -439,32 +450,38 @@ for (i in 1:nsyth) {
 }
 
 # plot ----
-ggplot(slope) +
+t.test(slope$d18_g, slope$d18_ig)
+p1 = ggplot(slope) +
   geom_density(aes(x = d18_g), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
   geom_density(aes(x = d18_ig), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
-  # geom_vline(xintercept = median(slope_d18_g$d18_g), color = "#2171B5", size = 1, linetype = "dashed") +
-  # geom_vline(xintercept = median(slope_d18_ig$d18_ig), color = "#D94801", size = 1, linetype = "dashed") +
+  geom_vline(xintercept = mean(slope$d18_g, na.rm = TRUE), color = "#2171B5", size = 1, linetype = "dashed") +
+  geom_vline(xintercept = mean(slope$d18_ig, na.rm = TRUE), color = "#D94801", size = 1, linetype = "dashed") +
   theme_bw() + theme +
-  # annotate("text", x = -0.75, y = 2, label = expression("Benthic "*delta^"18"*"O")) +
-  labs(x = "slope", y = "density") +
-  scale_x_continuous(limits = c(-.5, 0))
+  annotate("text", x = -0.75, y = 4, label = expression("Benthic "*delta^"18"*"O")) +
+  scale_x_continuous(limits = c(-1, 0)) +
+  labs(x = "slope", y = "density")
 
-ggplot(slope) +
+t.test(slope$bwt_g, slope$bwt_ig)
+p2 = ggplot(slope) +
   geom_density(aes(x = bwt_g), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
   geom_density(aes(x = bwt_ig), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
-  # geom_vline(xintercept = median(slope_bwt_g$bwt_g), color = "#2171B5", size = 1, linetype = "dashed") +
-  # geom_vline(xintercept = median(slope_bwt_ig$bwt_ig), color = "#D94801", size = 1, linetype = "dashed") +
+  geom_vline(xintercept = mean(slope$bwt_g, na.rm = TRUE), color = "#2171B5", size = 1, linetype = "dashed") +
+  geom_vline(xintercept = mean(slope$bwt_ig, na.rm = TRUE), color = "#D94801", size = 1, linetype = "dashed") +
   theme_bw() + theme +
-  # annotate("text", x = 4, y = 1, label = "BWT") +
-  labs(x = "slope", y = "density") +
-  scale_x_continuous(limits = c(0, 2))
+  annotate("text", x = 3.5, y = 1.2, label = "BWT") +
+  scale_x_continuous(limits = c(0, 4)) +
+  labs(x = "slope", y = "density")
 
-ggplot(slope) +
+t.test(slope$wpwp_g, slope$wpwp_ig)
+p3 = ggplot(slope) +
   geom_density(aes(x = wpwp_g), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
   geom_density(aes(x = wpwp_ig), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
-  # geom_vline(xintercept = median(slope_bwt_g$bwt_g), color = "#2171B5", size = 1, linetype = "dashed") +
-  # geom_vline(xintercept = median(slope_bwt_ig$bwt_ig), color = "#D94801", size = 1, linetype = "dashed") +
+  geom_vline(xintercept = mean(slope$wpwp_g), color = "#2171B5", size = 1, linetype = "dashed") +
+  geom_vline(xintercept = mean(slope$wpwp_ig, na.rm = TRUE), color = "#D94801", size = 1, linetype = "dashed") +
   theme_bw() + theme +
-  # annotate("text", x = 4, y = 1, label = "BWT") +
-  labs(x = "slope", y = "density") +
-  scale_x_continuous(limits = c(0, 1.5))
+  annotate("text", x = 2.5, y = 1, label = "WPWP") +
+  scale_x_continuous(limits = c(-0.5, 3)) +
+  labs(x = "slope", y = "density")
+
+ggarrange(p1, p2, p3, nrow = 1, ncol = 3, align = "hv")
+ggsave("figures/Fig_3_climate_sensitivity_pdfs.pdf", width = 7.2, height = 2.5)
