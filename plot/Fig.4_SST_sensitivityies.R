@@ -17,7 +17,6 @@ theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
               panel.grid.minor = element_blank(),
               panel.grid.major = element_blank())
 
-
 # read data ----
 dat_g = read.csv("output/climate_sensitivity_glacial.csv")
 r_g = dat_g[, c("time", "r", "r.sd")]

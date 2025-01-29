@@ -26,6 +26,7 @@ paleosol_g = read_xlsx("data/Dataset S1.xlsx", sheet = 2)
 paleosol_g = paleosol_g[, c(4, 17)] %>% drop_na()
 names(paleosol_g) = c("age", "CO2")
 # other proxy data
+gmst = read.csv("data/GMST.csv")
 boron = read.csv("data/co2_compilation/boron_CO2.csv")
 ice_core = read.csv("data/co2_compilation/ice_core_co2.csv")
 blue_ice = read.csv("data/co2_compilation/blue.ice.csv")
@@ -46,6 +47,8 @@ blue_ice_g$method = "ice"
 co2_g = rbind(paleosol_g[,c("age", "CO2", "method")], 
               boron_g[, c("age", "CO2", "method")], 
               ice_core_g, blue_ice_g[, c("age", "CO2", "method")])
+gmst$Age = gmst$age*1000
+gmst_g = filter_g(gmst, "Age")
 benthic_g = filter_g(benthic, "Age")
 bwt_g = filter_g(bwt, "age")
 wpwp.sst_g = filter_g(wpwp.sst, "age")
@@ -61,6 +64,7 @@ boron_ig$method = "boron"
 blue_ice_ig$method = "ice"
 co2_ig = rbind(paleosol_ig, boron_ig[, c("age", "CO2", "method")], 
               ice_core_ig, blue_ice_ig[, c("age", "CO2", "method")])
+gmst_ig = filter_ig(gmst, "Age")
 benthic_ig = filter_ig(benthic, "Age")
 bwt_ig = filter_ig(bwt, "age")
 wpwp.sst_ig = filter_ig(wpwp.sst, "age")
@@ -70,6 +74,8 @@ interval = 0.3
 age_max = 2.7
 co2_g = co2_g %>%
   mutate(time = assign_time_group(age, interval, age_max))
+gmst_g = gmst_g %>%
+  mutate(time = assign_time_group(age, interval, age_max))
 benthic_g = benthic_g %>%
   mutate(time = assign_time_group(age, interval, age_max))
 bwt_g = bwt_g %>%
@@ -77,6 +83,8 @@ bwt_g = bwt_g %>%
 wpwp.sst_g = wpwp.sst_g %>%
   mutate(time = assign_time_group(age, interval, age_max))
 co2_ig = co2_ig %>%
+  mutate(time = assign_time_group(age, interval, age_max))
+gmst_ig = gmst_ig %>%
   mutate(time = assign_time_group(age, interval, age_max))
 benthic_ig = benthic_ig %>%
   mutate(time = assign_time_group(age, interval, age_max))
@@ -90,6 +98,10 @@ co2_g$period = "glacial"
 co2_ig$period = "interglacial"
 binned_CO2 = rbind(co2_g, co2_ig)
 write.csv(binned_CO2, "output/binned_co2.csv")
+gmst_g$period = "glacial"
+gmst_ig$period = "interglacial"
+binned_gmst = rbind(gmst_g, gmst_ig)
+write.csv(binned_gmst, "output/binned_gmst.csv")
 benthic_g$period = "glacial"
 benthic_ig$period = "interglacial"
 binned_benthic = rbind(benthic_g, benthic_ig)

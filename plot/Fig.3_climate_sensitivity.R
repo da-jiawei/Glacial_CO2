@@ -20,24 +20,37 @@ theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
 co2 = read.csv("output/binned_co2.csv")
 ice_co2 = co2 %>% filter(method == "ice", age <= 0.8)
 proxy_co2 = co2 %>% filter(age > 0.8)
+gmst = read.csv("output/binned_gmst.csv")
 benthic = read.csv("output/binned_benthic.csv")
 bwt = read.csv("output/binned_bwt.csv")
 wpwp = read.csv("output/binned_wpwp.csv")
 R_LI = read.csv("data/R_LI_koehler2015.csv") %>%
   mutate(age = Age / 1000) %>%
   filter(age < 2.7)
+dat_ig = read.csv("output/climate_sensitivity_interglacial.csv")
+dat_g = read.csv("output/climate_sensitivity_glacial.csv")
 
 # time-series plot ----
 pal = c("#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C")
 method = pal[factor(proxy_co2$method, levels = c("paleosol", "boron", "ice"))]
 
-png("figures/time_series_climate_sensitivity.png", 4, 4.5, units = "in", res = 300)
+png("figures/time_series_climate_sensitivity.png", 4, 5.5, units = "in", res = 300)
 par(mar = c(4, 4, 1, 4))
-plot(-0.3, 0, xlim = c(0, 2.7), ylim = c(0, 5), axes = FALSE,
+plot(-0.3, 0, xlim = c(0, 2.7), ylim = c(0, 6), axes = FALSE,
      xlab = "", ylab = "")
 
 legend(x = 0, y = 4.1, legend = c("paleosol", "boron", "blue ice"),
        col = pal, pch = 16, cex = 0.4, pt.cex = 1)
+
+yext = range(gmst$GMST)
+tix = seq(floor(min(yext)), 
+          ceiling(max(yext)), by = 4)
+gmst.rs = cbind(gmst$age,
+                5 + (gmst$GMST - min(tix)) / diff(range(tix)))
+gmst.rs = gmst.rs[order(gmst.rs[, 1]), ]
+lines(gmst.rs[, 1], gmst.rs[, 2], col = pal[1], lwd = 1)
+axis(2, 5 + (tix - min(tix)) / diff(range(tix)), tix)
+mtext(expression(paste(Delta*"GMST (", degree,"C)")), 2, line = 2.5, at = 5.5)
 
 yext = range(R_LI$RLI)
 tix = seq(floor(min(yext)), 
@@ -118,6 +131,9 @@ for (i in 1:nrow(forcing_g)) {
   forcing_g$r[i] = mean(r_total)
   forcing_g$r.sd[i] = sd(r_total)
 }
+gmst_g = gmst %>%
+  filter(period == "glacial") %>% group_by(time) %>%
+  summarise(gmst = mean(GMST), gmst.sd = sd(GMST))
 d18_g = benthic %>%
   filter(period == "glacial") %>% group_by(time) %>%
   summarise(d18 = mean(d18O), d18.sd = sd(d18O))
@@ -128,84 +144,9 @@ wpwp_g = wpwp %>%
   filter(period == "glacial") %>% group_by(time) %>%
   summarise(sst = mean(SST), sst.sd = sd(SST))
 
-dat_list = list(forcing_g, d18_g, bwt_g, wpwp_g)
+dat_list = list(forcing_g, gmst_g, d18_g, bwt_g, wpwp_g)
 dat_g = reduce(dat_list, full_join, by = "time")
 write.csv(dat_g, "output/climate_sensitivity_glacial.csv")
-
-p1 = ggplot(dat_g, aes(x = lnco2, y = d18)) +
-  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
-  geom_errorbar(aes(xmin = lnco2 - lnco2.sd, xmax = lnco2 + lnco2.sd), width = 0, linewidth = 0.2) +
-  geom_errorbar(aes(ymin = d18 - d18.sd, ymax = d18 + d18.sd), width = 0, linewidth = 0.2) +
-  geom_point(aes(fill = time), shape = 21, size = 3) +
-  scale_fill_brewer(palette = 1) +
-  theme_bw() + theme +
-  scale_x_continuous(limits = c(-0.5, 0.5)) +
-  scale_y_reverse(limits = c(4.7, 3.1)) +
-  labs(x = expression("ln(CO"[2]*"/C"[o]*")"),
-       y = expression(delta^"18"*"O (\u2030)"))
-
-p2 = ggplot(dat_g, aes(x = lnco2, y = bwt)) +
-  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
-  geom_errorbar(aes(xmin = lnco2 - lnco2.sd, xmax = lnco2 + lnco2.sd), width = 0, linewidth = 0.2) +
-  geom_errorbar(aes(ymin = bwt - bwt.sd, ymax = bwt + bwt.sd), width = 0, linewidth = 0.2) +
-  geom_point(aes(fill = time), shape = 21, size = 3) +
-  scale_fill_brewer(palette = 1) +
-  theme_bw() + theme +
-  scale_x_continuous(limits = c(-0.5, 0.5)) +
-  scale_y_continuous(limits = c(-1, 5.5)) +
-  labs(x = expression("ln(CO"[2]*"/C"[o]*")"),
-       y = expression(paste("BWT (", degree, "C)")))
-
-p3 = ggplot(dat_g, aes(x = lnco2, y = sst)) +
-  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
-  geom_errorbar(aes(xmin = lnco2 - lnco2.sd, xmax = lnco2 + lnco2.sd), width = 0, linewidth = 0.2) +
-  geom_errorbar(aes(ymin = sst - sst.sd, ymax = sst + sst.sd), width = 0, linewidth = 0.2) +
-  geom_point(aes(fill = time), shape = 21, size = 3) +
-  scale_fill_brewer(palette = 1) +
-  theme_bw() + theme +
-  scale_x_continuous(limits = c(-0.5, 0.5)) +
-  scale_y_continuous(limits = c(25, 31)) +
-  labs(x = expression("ln(CO"[2]*"/C"[o]*")"),
-       y = expression(paste("SST (", degree, "C)")))
-
-p4 = ggplot(dat_g, aes(x = r, y = d18)) +
-  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
-  geom_errorbar(aes(xmin = r - r.sd, xmax = r + r.sd), width = 0, linewidth = 0.2) +
-  geom_errorbar(aes(ymin = d18 - d18.sd, ymax = d18 + d18.sd), width = 0, linewidth = 0.2) +
-  geom_point(aes(fill = time), shape = 21, size = 3) +
-  scale_fill_brewer(palette = 1) +
-  theme_bw() + theme +
-  scale_x_continuous(limits = c(-6, 1.5)) +
-  scale_y_reverse(limits = c(4.7, 3.1)) +
-  labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
-       y = expression(delta^"18"*"O (\u2030)"))
-
-p5 = ggplot(dat_g, aes(x = r, y = bwt)) +
-  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
-  geom_errorbar(aes(xmin = r - r.sd, xmax = r + r.sd), width = 0, linewidth = 0.2) +
-  geom_errorbar(aes(ymin = bwt - bwt.sd, ymax = bwt + bwt.sd), width = 0, linewidth = 0.2) +
-  geom_point(aes(fill = time), shape = 21, size = 3) +
-  scale_fill_brewer(palette = 1) +
-  theme_bw() + theme +
-  scale_x_continuous(limits = c(-6, 1.5)) +
-  scale_y_continuous(limits = c(-1, 5.5)) +
-  labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
-       y = expression(paste("BWT (", degree, "C)")))
-
-p6 = ggplot(dat_g, aes(x = r, y = sst)) +
-  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
-  geom_errorbar(aes(xmin = r - r.sd, xmax = r + r.sd), width = 0, linewidth = 0.2) +
-  geom_errorbar(aes(ymin = sst - sst.sd, ymax = sst + sst.sd), width = 0, linewidth = 0.2) +
-  geom_point(aes(fill = time), shape = 21, size = 3) +
-  scale_fill_brewer(palette = 1) +
-  theme_bw() + theme +
-  scale_x_continuous(limits = c(-6, 1.5)) +
-  scale_y_continuous(limits = c(25, 31)) +
-  labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
-       y = expression(paste("SST (", degree, "C)")))
-
-ggarrange(p1,p2,p3,p4,p5,p6, nrow = 2, ncol = 3, align = "hv", common.legend = TRUE)
-ggsave("figures/Fig_3_climate_sensitivity_glacials.pdf", width = 7.2, height = 5.8)
 
 ## interglacials ----
 co2_ig = co2 %>% filter(period == "interglacial")
@@ -224,6 +165,9 @@ for (i in 1:nrow(forcing_ig)) {
   forcing_ig$r[i] = mean(r_total)
   forcing_ig$r.sd[i] = sd(r_total)
 }
+gmst_ig = gmst %>%
+  filter(period == "interglacial") %>% group_by(time) %>%
+  summarise(gmst = mean(GMST), gmst.sd = sd(GMST)) 
 d18_ig = benthic %>%
   filter(period == "interglacial") %>% group_by(time) %>%
   summarise(d18 = mean(d18O), d18.sd = sd(d18O))
@@ -234,47 +178,185 @@ wpwp_ig = wpwp %>%
   filter(period == "interglacial") %>% group_by(time) %>%
   summarise(sst = mean(SST), sst.sd = sd(SST))
 
-dat_list = list(forcing_ig, d18_ig, bwt_ig, wpwp_ig)
+dat_list = list(forcing_ig, gmst_ig, d18_ig, bwt_ig, wpwp_ig)
 dat_ig = reduce(dat_list, full_join, by = "time")
 write.csv(dat_ig, "output/climate_sensitivity_interglacial.csv")
 
-p1 = ggplot(dat_ig, aes(x = lnco2, y = d18)) +
+## plot ----
+# ranges
+x.min = round(min(dat_g$lnco2 - dat_g$lnco2.sd)-0.1,1)
+x.max = round(max(dat_ig$lnco2 + dat_ig$lnco2.sd),1)
+
+p1 = ggplot(dat_g, aes(x = lnco2, y = gmst)) +
+  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
+  geom_errorbar(aes(xmin = lnco2 - lnco2.sd, xmax = lnco2 + lnco2.sd), width = 0, linewidth = 0.2) +
+  geom_errorbar(aes(ymin = gmst - gmst.sd, ymax = gmst + gmst.sd), width = 0, linewidth = 0.2) +
+  geom_point(aes(fill = time), shape = 21, size = 3) +
+  scale_fill_brewer(palette = 1) +
+  theme_bw() + theme +
+  scale_x_continuous(limits = c(x.min, x.max)) +
+  scale_y_continuous(limits = c(-4, 5)) +
+  labs(x = expression("ln(CO"[2]*"/C"[o]*")"),
+       y = expression(paste(Delta*"GMST (", degree, "C)")))
+
+p2 = ggplot(dat_g, aes(x = lnco2, y = d18)) +
+  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
+  geom_errorbar(aes(xmin = lnco2 - lnco2.sd, xmax = lnco2 + lnco2.sd), width = 0, linewidth = 0.2) +
+  geom_errorbar(aes(ymin = d18 - d18.sd, ymax = d18 + d18.sd), width = 0, linewidth = 0.2) +
+  geom_point(aes(fill = time), shape = 21, size = 3) +
+  scale_fill_brewer(palette = 1) +
+  theme_bw() + theme +
+  scale_x_continuous(limits = c(x.min, x.max)) +
+  scale_y_reverse(limits = c(4.7, 3.1)) +
+  labs(x = expression("ln(CO"[2]*"/C"[o]*")"),
+       y = expression(delta^"18"*"O (\u2030)"))
+
+p3 = ggplot(dat_g, aes(x = lnco2, y = bwt)) +
+  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
+  geom_errorbar(aes(xmin = lnco2 - lnco2.sd, xmax = lnco2 + lnco2.sd), width = 0, linewidth = 0.2) +
+  geom_errorbar(aes(ymin = bwt - bwt.sd, ymax = bwt + bwt.sd), width = 0, linewidth = 0.2) +
+  geom_point(aes(fill = time), shape = 21, size = 3) +
+  scale_fill_brewer(palette = 1) +
+  theme_bw() + theme +
+  scale_x_continuous(limits = c(x.min, x.max)) +
+  scale_y_continuous(limits = c(-1, 5.5)) +
+  labs(x = expression("ln(CO"[2]*"/C"[o]*")"),
+       y = expression(paste("BWT (", degree, "C)")))
+
+p4 = ggplot(dat_g, aes(x = lnco2, y = sst)) +
+  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
+  geom_errorbar(aes(xmin = lnco2 - lnco2.sd, xmax = lnco2 + lnco2.sd), width = 0, linewidth = 0.2) +
+  geom_errorbar(aes(ymin = sst - sst.sd, ymax = sst + sst.sd), width = 0, linewidth = 0.2) +
+  geom_point(aes(fill = time), shape = 21, size = 3) +
+  scale_fill_brewer(palette = 1) +
+  theme_bw() + theme +
+  scale_x_continuous(limits = c(x.min, x.max)) +
+  scale_y_continuous(limits = c(25, 31)) +
+  labs(x = expression("ln(CO"[2]*"/C"[o]*")"),
+       y = expression(paste("SST (", degree, "C)")))
+
+x.min = round(min(dat_g$r - dat_g$r.sd)-0.1,1)
+x.max = round(max(dat_ig$r + dat_ig$r.sd),1)
+
+p5 = ggplot(dat_g, aes(x = r, y = gmst)) +
+  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
+  geom_errorbar(aes(xmin = r - r.sd, xmax = r + r.sd), width = 0, linewidth = 0.2) +
+  geom_errorbar(aes(ymin = gmst - gmst.sd, ymax = gmst + gmst.sd), width = 0, linewidth = 0.2) +
+  geom_point(aes(fill = time), shape = 21, size = 3) +
+  scale_fill_brewer(palette = 1) +
+  theme_bw() + theme +
+  scale_x_continuous(limits = c(x.min, x.max)) +
+  scale_y_continuous(limits = c(-4, 5)) +
+  labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
+       y = expression(paste(Delta*"GMST (", degree, "C)")))
+
+p6 = ggplot(dat_g, aes(x = r, y = d18)) +
+  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
+  geom_errorbar(aes(xmin = r - r.sd, xmax = r + r.sd), width = 0, linewidth = 0.2) +
+  geom_errorbar(aes(ymin = d18 - d18.sd, ymax = d18 + d18.sd), width = 0, linewidth = 0.2) +
+  geom_point(aes(fill = time), shape = 21, size = 3) +
+  scale_fill_brewer(palette = 1) +
+  theme_bw() + theme +
+  scale_x_continuous(limits = c(x.min, x.max)) +
+  scale_y_reverse(limits = c(4.7, 3.1)) +
+  labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
+       y = expression(delta^"18"*"O (\u2030)"))
+
+p7 = ggplot(dat_g, aes(x = r, y = bwt)) +
+  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
+  geom_errorbar(aes(xmin = r - r.sd, xmax = r + r.sd), width = 0, linewidth = 0.2) +
+  geom_errorbar(aes(ymin = bwt - bwt.sd, ymax = bwt + bwt.sd), width = 0, linewidth = 0.2) +
+  geom_point(aes(fill = time), shape = 21, size = 3) +
+  scale_fill_brewer(palette = 1) +
+  theme_bw() + theme +
+  scale_x_continuous(limits = c(x.min, x.max)) +
+  scale_y_continuous(limits = c(-1, 5.5)) +
+  labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
+       y = expression(paste("BWT (", degree, "C)")))
+
+p8 = ggplot(dat_g, aes(x = r, y = sst)) +
+  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#2171B5", fill = "#2171B5") +
+  geom_errorbar(aes(xmin = r - r.sd, xmax = r + r.sd), width = 0, linewidth = 0.2) +
+  geom_errorbar(aes(ymin = sst - sst.sd, ymax = sst + sst.sd), width = 0, linewidth = 0.2) +
+  geom_point(aes(fill = time), shape = 21, size = 3) +
+  scale_fill_brewer(palette = 1) +
+  theme_bw() + theme +
+  scale_x_continuous(limits = c(x.min, x.max)) +
+  scale_y_continuous(limits = c(25, 31)) +
+  labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
+       y = expression(paste("SST (", degree, "C)")))
+
+ggarrange(p1,p2,p3,p4,p5,p6,p7,p8, nrow = 2, ncol = 4, align = "hv", common.legend = TRUE)
+ggsave("figures/Fig_3_climate_sensitivity_glacials.pdf", width = 9.9, height = 5.8)
+
+# ranges
+x.min = round(min(dat_g$lnco2 - dat_g$lnco2.sd)-0.1,1)
+x.max = round(max(dat_ig$lnco2 + dat_ig$lnco2.sd),1)
+
+p1 = ggplot(dat_ig, aes(x = lnco2, y = gmst)) +
+  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#D94801", fill = "#D94801") +
+  geom_errorbar(aes(xmin = lnco2 - lnco2.sd, xmax = lnco2 + lnco2.sd), width = 0, linewidth = 0.2) +
+  geom_errorbar(aes(ymin = gmst - gmst.sd, ymax = gmst + gmst.sd), width = 0, linewidth = 0.2) +
+  geom_point(aes(fill = time), shape = 21, size = 3) +
+  scale_fill_brewer(palette = 7) +
+  theme_bw() + theme +
+  scale_x_continuous(limits = c(x.min, x.max)) +
+  scale_y_continuous(limits = c(-4, 5)) +
+  labs(x = expression("ln(CO"[2]*"/C"[o]*")"),
+       y = expression(paste(Delta*"GMST (", degree, "C)")))
+
+p2 = ggplot(dat_ig, aes(x = lnco2, y = d18)) +
   geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#D94801", fill = "#D94801") +
   geom_errorbar(aes(xmin = lnco2 - lnco2.sd, xmax = lnco2 + lnco2.sd), width = 0, linewidth = 0.2) +
   geom_errorbar(aes(ymin = d18 - d18.sd, ymax = d18 + d18.sd), width = 0, linewidth = 0.2) +
   geom_point(aes(fill = time), shape = 21, size = 3) +
   scale_fill_brewer(palette = 7) +
   theme_bw() + theme +
-  scale_x_continuous(limits = c(-0.5, 0.5)) +
+  scale_x_continuous(limits = c(x.min, x.max)) +
   scale_y_reverse(limits = c(4.7, 3.1)) +
   labs(x = expression("ln(CO"[2]*"/C"[o]*")"),
        y = expression(delta^"18"*"O (\u2030)"))
 
-p2 = ggplot(dat_ig, aes(x = lnco2, y = bwt)) +
+p3 = ggplot(dat_ig, aes(x = lnco2, y = bwt)) +
   geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#D94801", fill = "#D94801") +
   geom_errorbar(aes(xmin = lnco2 - lnco2.sd, xmax = lnco2 + lnco2.sd), width = 0, linewidth = 0.2) +
   geom_errorbar(aes(ymin = bwt - bwt.sd, ymax = bwt + bwt.sd), width = 0, linewidth = 0.2) +
   geom_point(aes(fill = time), shape = 21, size = 3) +
   scale_fill_brewer(palette = 7) +
   theme_bw() + theme +
-  scale_x_continuous(limits = c(-0.5, 0.5)) +
+  scale_x_continuous(limits = c(x.min, x.max)) +
   scale_y_continuous(limits = c(-1, 5.5)) +
   labs(x = expression("ln(CO"[2]*"/C"[o]*")"),
        y = expression(paste("BWT (", degree, "C)")))
 
-p3 = ggplot(dat_ig, aes(x = lnco2, y = sst)) +
+p4 = ggplot(dat_ig, aes(x = lnco2, y = sst)) +
   geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#D94801", fill = "#D94801") +
   geom_errorbar(aes(xmin = lnco2 - lnco2.sd, xmax = lnco2 + lnco2.sd), width = 0, linewidth = 0.2) +
   geom_errorbar(aes(ymin = sst - sst.sd, ymax = sst + sst.sd), width = 0, linewidth = 0.2) +
   geom_point(aes(fill = time), shape = 21, size = 3) +
   scale_fill_brewer(palette = 7) +
   theme_bw() + theme +
-  scale_x_continuous(limits = c(-0.5, 0.5)) +
+  scale_x_continuous(limits = c(x.min, x.max)) +
   scale_y_continuous(limits = c(25, 31)) +
   labs(x = expression("ln(CO"[2]*"/C"[o]*")"),
        y = expression(paste("SST (", degree, "C)")))
 
-p4 = ggplot(dat_ig, aes(x = r, y = d18)) +
+x.min = round(min(dat_g$r - dat_g$r.sd)-0.1,1)
+x.max = round(max(dat_ig$r + dat_ig$r.sd),1)
+
+p5 = ggplot(dat_ig, aes(x = r, y = gmst)) +
+  geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#D94801", fill = "#D94801") +
+  geom_errorbar(aes(xmin = r - r.sd, xmax = r + r.sd), width = 0, linewidth = 0.2) +
+  geom_errorbar(aes(ymin = gmst - gmst.sd, ymax = gmst + gmst.sd), width = 0, linewidth = 0.2) +
+  geom_point(aes(fill = time), shape = 21, size = 3) +
+  scale_fill_brewer(palette = 7) +
+  theme_bw() + theme +
+  scale_x_continuous(limits = c(x.min, x.max)) +
+  scale_y_continuous(limits = c(-4, 5)) +
+  labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
+       y = expression(paste(Delta*"GMST (", degree, "C)")))
+
+p6 = ggplot(dat_ig, aes(x = r, y = d18)) +
   geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#D94801", fill = "#D94801") +
   geom_errorbar(aes(xmin = r - r.sd, xmax = r + r.sd), width = 0, linewidth = 0.2) +
   geom_errorbar(aes(ymin = d18 - d18.sd, ymax = d18 + d18.sd), width = 0, linewidth = 0.2) +
@@ -286,39 +368,42 @@ p4 = ggplot(dat_ig, aes(x = r, y = d18)) +
   labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
        y = expression(delta^"18"*"O (\u2030)"))
 
-p5 = ggplot(dat_ig, aes(x = r, y = bwt)) +
+p7 = ggplot(dat_ig, aes(x = r, y = bwt)) +
   geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#D94801", fill = "#D94801") +
   geom_errorbar(aes(xmin = r - r.sd, xmax = r + r.sd), width = 0, linewidth = 0.2) +
   geom_errorbar(aes(ymin = bwt - bwt.sd, ymax = bwt + bwt.sd), width = 0, linewidth = 0.2) +
   geom_point(aes(fill = time), shape = 21, size = 3) +
   scale_fill_brewer(palette = 7) +
   theme_bw() + theme +
-  scale_x_continuous(limits = c(-6, 1.5)) +
+  scale_x_continuous(limits = c(x.min, x.max)) +
   scale_y_continuous(limits = c(-1, 5.5)) +
   labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
        y = expression(paste("BWT (", degree, "C)")))
 
-p6 = ggplot(dat_ig, aes(x = r, y = sst)) +
+p8 = ggplot(dat_ig, aes(x = r, y = sst)) +
   geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = "#D94801", fill = "#D94801") +
   geom_errorbar(aes(xmin = r - r.sd, xmax = r + r.sd), width = 0, linewidth = 0.2) +
   geom_errorbar(aes(ymin = sst - sst.sd, ymax = sst + sst.sd), width = 0, linewidth = 0.2) +
   geom_point(aes(fill = time), shape = 21, size = 3) +
   scale_fill_brewer(palette = 7) +
   theme_bw() + theme +
-  scale_x_continuous(limits = c(-6, 1.5)) +
+  scale_x_continuous(limits = c(x.min, x.max)) +
   scale_y_continuous(limits = c(25, 31)) +
   labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
        y = expression(paste("SST (", degree, "C)")))
 
-ggarrange(p1,p2,p3,p4,p5,p6, nrow = 2, ncol = 3, align = "hv", common.legend = TRUE)
-ggsave("figures/Fig_3_climate_sensitivity_interglacials.pdf", width = 7.2, height = 5.8)
-
-
+ggarrange(p1,p2,p3,p4,p5,p6,p7,p8, nrow = 2, ncol = 4, align = "hv", common.legend = TRUE)
+ggsave("figures/Fig_3_climate_sensitivity_interglacials.pdf", width = 9.9, height = 5.8)
 
 ## statistics ----
-sens.co2 = data.frame(matrix(nrow = 2, ncol = 4))
-names(sens.co2) = c("d18", "bwt", "wpwp", "period")
+# the p-value of the regression slopes
+sens.co2 = data.frame(matrix(nrow = 2, ncol = 5))
+names(sens.co2) = c("gmst", "d18", "bwt", "wpwp", "period")
 sens.co2$period = c("glacial", "interglacial")
+m_gmst_g = lm(gmst ~ lnco2, data = dat_g)
+sens.co2$gmst[1] = summary(m_gmst_g)$coefficients[2,4]
+m_gmst_ig = lm(gmst ~ lnco2, data = dat_ig)
+sens.co2$gmst[2] = summary(m_gmst_ig)$coefficients[2,4]
 m_d18_g = lm(d18 ~ lnco2, data = dat_g)
 sens.co2$d18[1] = summary(m_d18_g)$coefficients[2,4]
 m_d18_ig = lm(d18 ~ lnco2, data = dat_ig)
@@ -332,40 +417,49 @@ sens.co2$wpwp[1] = summary(m_wpwp_g)$coefficients[2,4]
 m_wpwp_ig = lm(sst ~ lnco2, data = dat_ig)
 sens.co2$wpwp[2] = summary(m_wpwp_ig)$coefficients[2,4]
 
-sens = data.frame(matrix(nrow = 2, ncol = 4))
-names(sens) = c("d18", "bwt", "wpwp", "period")
+sens = data.frame(matrix(nrow = 2, ncol = 5))
+names(sens) = c("gmst", "d18", "bwt", "wpwp", "period")
 sens$period = c("glacial", "interglacial")
+m_gmst_g = lm(gmst ~ r, data = dat_g)
+sens$gmst[1] = summary(m_gmst_g)$coefficients[2,4]
+m_gmst_ig = lm(gmst ~ r, data = dat_ig)
+sens$gmst[2] = summary(m_gmst_ig)$coefficients[2,4]
 m_d18_g = lm(d18 ~ r, data = dat_g)
-sens$d18[1] = summary(m_d18_g)$coefficients[2,1]
+sens$d18[1] = summary(m_d18_g)$coefficients[2,4]
 m_d18_ig = lm(d18 ~ r, data = dat_ig)
-sens$d18[2] = summary(m_d18_ig)$coefficients[2,1]
+sens$d18[2] = summary(m_d18_ig)$coefficients[2,4]
 m_bwt_g = lm(bwt ~ r, data = dat_g)
-sens$bwt[1] = summary(m_bwt_g)$coefficients[2,1]
+sens$bwt[1] = summary(m_bwt_g)$coefficients[2,4]
 m_bwt_ig = lm(bwt ~ r, data = dat_ig)
-sens$bwt[2] = summary(m_bwt_ig)$coefficients[2,1]
+sens$bwt[2] = summary(m_bwt_ig)$coefficients[2,4]
 m_wpwp_g = lm(sst ~ r, data = dat_g)
-sens$wpwp[1] = summary(m_wpwp_g)$coefficients[2,1]
+sens$wpwp[1] = summary(m_wpwp_g)$coefficients[2,4]
 m_wpwp_ig = lm(sst ~ r, data = dat_ig)
-sens$wpwp[2] = summary(m_wpwp_ig)$coefficients[2,1]
+sens$wpwp[2] = summary(m_wpwp_ig)$coefficients[2,4]
 
 write.csv(sens.co2, "output/sens_co2_pvalue.csv")
 write.csv(sens, "output/sens_pvalue.csv")
 
+
+
 # PDFs ----
-slope = data.frame(matrix(nrow = nsyth, ncol = 6))
-names(slope) = c("d18_g", "bwt_g", "wpwp_g", "d18_ig", "bwt_ig", "wpwp_ig")
+slope = data.frame(matrix(nrow = nsyth, ncol = 8))
+names(slope) = c("gmst_g", "d18_g", "bwt_g", "wpwp_g", "gmst_ig", "d18_ig", "bwt_ig", "wpwp_ig")
 time = unique(co2_g$time)
 # based on raw data ----
+gmst_g = gmst %>% filter(period == "glacial")
 d18_g = benthic %>% filter(period == "glacial")
 bwt_g = bwt %>% filter(period == "glacial")
 wpwp_g = wpwp %>% filter(period == "glacial")
+gmst_ig = gmst %>% filter(period == "interglacial")
 d18_ig = benthic %>% filter(period == "interglacial")
 bwt_ig = bwt %>% filter(period == "interglacial")
 wpwp_ig = wpwp %>% filter(period == "interglacial")
 for (i in 1:nsyth) {
-  subgroup = data.frame(matrix(nrow = length(time), ncol = 8))
-  names(subgroup) = c("df.g", "d18.g", "bwt.g", "sst.g", "df.ig", "d18.ig", "bwt.ig", "sst.ig")
+  subgroup = data.frame(matrix(nrow = length(time), ncol = 10))
+  names(subgroup) = c("df.g", "gmst.g", "d18.g", "bwt.g", "sst.g", "df.ig", "gmst.ig", "d18.ig", "bwt.ig", "sst.ig")
   for (p in 1:length(time)) {
+    gmst_s = gmst_g %>% filter(time == time[p])
     d18_s = d18_g %>% filter(time == time[p])
     bwt_s = bwt_g %>% filter(time == time[p])
     wpwp_s = wpwp_g %>% filter(time == time[p])
@@ -376,9 +470,11 @@ for (i in 1:nsyth) {
     # subgroup$df.g[p] = (r_co2 + r_li) * 0.67
     forcing_s = forcing_g %>% filter(time == time[p])
     subgroup$df.g[p] = rnorm(1, forcing_s$r, forcing_s$r.sd)
+    subgroup$gmst.g[p] = sample(gmst_s$GMST, 1)
     subgroup$d18.g[p] = sample(d18_s$d18O, 1)
     subgroup$bwt.g[p] = sample(bwt$BWT, 1)
     subgroup$sst.g[p] = sample(wpwp$SST, 1)
+    gmst_s = gmst_ig %>% filter(time == time[p])
     d18_s = d18_ig %>% filter(time == time[p])
     bwt_s = bwt_ig %>% filter(time == time[p])
     wpwp_s = wpwp_ig %>% filter(time == time[p])
@@ -389,22 +485,27 @@ for (i in 1:nsyth) {
     # subgroup$df.ig[p] = (r_co2 + r_li) * 0.67
     forcing_s = forcing_ig %>% filter(time == time[p])
     subgroup$df.ig[p] = rnorm(1, forcing_s$r, forcing_s$r.sd)
+    subgroup$gmst.ig[p] = sample(gmst_s$GMST, 1)
     subgroup$d18.ig[p] = sample(d18_s$d18O, 1)
     subgroup$bwt.ig[p] = sample(bwt$BWT, 1)
     subgroup$sst.ig[p] = sample(wpwp$SST, 1)
   }
+  m_gmst = lm(gmst.g ~ df.g, data = subgroup)
   m_d18 = lm(d18.g ~ df.g, data = subgroup)
   m_bwt = lm(bwt.g ~ df.g, data = subgroup)
   m_sst = lm(sst.g ~ df.g, data = subgroup)
+  slope$gmst_g[i] = ifelse(summary(m_gmst)$coefficients[2, "Pr(>|t|)"]<0.05, m_gmst$coefficients[2], NA)
   slope$d18_g[i] = ifelse(summary(m_d18)$coefficients[2, "Pr(>|t|)"]<0.05, m_d18$coefficients[2], NA)
   slope$bwt_g[i] = ifelse(summary(m_bwt)$coefficients[2, "Pr(>|t|)"]<0.05, m_bwt$coefficients[2], NA)
   slope$wpwp_g[i] = ifelse(summary(m_sst)$coefficients[2, "Pr(>|t|)"]<0.05, m_sst$coefficients[2], NA)
   # slope$d18_g[i] = m_d18$coefficients[2]
   # slope$bwt_g[i] = m_bwt$coefficients[2]
   # slope$wpwp_g[i] = m_sst$coefficients[2]
+  m_gmst = lm(gmst.ig ~ df.g, data = subgroup)
   m_d18 = lm(d18.ig ~ df.ig, data = subgroup)
   m_bwt = lm(bwt.ig ~ df.ig, data = subgroup)
   m_sst = lm(sst.ig ~ df.ig, data = subgroup)
+  slope$gmst_ig[i] = ifelse(summary(m_gmst)$coefficients[2, "Pr(>|t|)"]<0.05, m_gmst$coefficients[2], NA)
   slope$d18_ig[i] = ifelse(summary(m_d18)$coefficients[2, "Pr(>|t|)"]<0.05, m_d18$coefficients[2], NA)
   slope$bwt_ig[i] = ifelse(summary(m_bwt)$coefficients[2, "Pr(>|t|)"]<0.05, m_bwt$coefficients[2], NA)
   slope$wpwp_ig[i] = ifelse(summary(m_sst)$coefficients[2, "Pr(>|t|)"]<0.05, m_sst$coefficients[2], NA)
@@ -415,20 +516,24 @@ for (i in 1:nsyth) {
 
 # based on mean and sd ----
 for (i in 1:nsyth) {
-  subgroup = data.frame(matrix(nrow = length(time), ncol = 8))
-  names(subgroup) = c("df.g", "d18.g", "bwt.g", "sst.g", "df.ig", "d18.ig", "bwt.ig", "sst.ig")
+  subgroup = data.frame(matrix(nrow = length(time), ncol = 10))
+  names(subgroup) = c("df.g", "gmst.g", "d18.g", "bwt.g", "sst.g", "df.ig", "gmst.ig", "d18.ig", "bwt.ig", "sst.ig")
   for (p in 1:length(time)) {
     dat_s = dat_g %>% filter(time == time[p])
     subgroup$df.g[p] = rnorm(1, dat_s$r, dat_s$r.sd)
+    subgroup$gmst.g[p] = rnorm(1, dat_s$gmst, dat_s$gmst.sd)
     subgroup$d18.g[p] = rnorm(1, dat_s$d18, dat_s$d18.sd)
     subgroup$bwt.g[p] = rnorm(1, dat_s$bwt, dat_s$bwt.sd)
     subgroup$sst.g[p] = rnorm(1, dat_s$sst, dat_s$sst.sd)
     dat_s = dat_ig %>% filter(time == time[p])
     subgroup$df.ig[p] = rnorm(1, dat_s$r, dat_s$r.sd)
+    subgroup$gmst.ig[p] = rnorm(1, dat_s$gmst, dat_s$gmst.sd)
     subgroup$d18.ig[p] = rnorm(1, dat_s$d18, dat_s$d18.sd)
     subgroup$bwt.ig[p] = rnorm(1, dat_s$bwt, dat_s$bwt.sd)
     subgroup$sst.ig[p] = rnorm(1, dat_s$sst, dat_s$sst.sd)
   }
+  m_gmst = lm(gmst.g ~ df.g, data = subgroup)
+  slope$gmst_g[i] = ifelse(summary(m_gmst)$coefficients[2, "Pr(>|t|)"]<0.05, m_gmst$coefficients[2], NA)
   m_d18 = lm(d18.g ~ df.g, data = subgroup)
   slope$d18_g[i] = ifelse(summary(m_d18)$coefficients[2, "Pr(>|t|)"]<0.05, m_d18$coefficients[2], NA)
   # slope$d18_g[i] = m_d18$coefficients[2]
@@ -438,6 +543,8 @@ for (i in 1:nsyth) {
   m_sst = lm(sst.g ~ df.g, data = subgroup)
   # slope$wpwp_g[i] = ifelse(summary(m_sst)$coefficients[2, "Pr(>|t|)"]<0.05, m_sst$coefficients[2], NA)
   slope$wpwp_g[i] = m_sst$coefficients[2]
+  m_gmst = lm(gmst.ig ~ df.ig, data = subgroup)
+  slope$gmst_ig[i] = ifelse(summary(m_gmst)$coefficients[2, "Pr(>|t|)"]<0.05, m_gmst$coefficients[2], NA)
   m_d18 = lm(d18.ig ~ df.ig, data = subgroup)
   slope$d18_ig[i] = ifelse(summary(m_d18)$coefficients[2, "Pr(>|t|)"]<0.05, m_d18$coefficients[2], NA)
   # slope$d18_ig[i] = m_d18$coefficients[2]
@@ -450,38 +557,49 @@ for (i in 1:nsyth) {
 }
 
 # plot ----
-t.test(slope$d18_g, slope$d18_ig)
+t.test(slope$gmst_g, slope$gmst_ig)
 p1 = ggplot(slope) +
+  geom_density(aes(x = gmst_g), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
+  geom_density(aes(x = gmst_ig), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
+  geom_vline(xintercept = median(slope$gmst_g, na.rm = TRUE), color = "#2171B5", linewidth = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(slope$gmst_ig, na.rm = TRUE), color = "#D94801", linewidth = 1, linetype = "dashed") +
+  theme_bw() + theme +
+  annotate("text", x = 0.6, y = 0.7, label = expression(Delta*"GMST")) +
+  scale_x_continuous(limits = c(0, 5)) +
+  labs(x = "slope", y = "density")
+p1
+t.test(slope$d18_g, slope$d18_ig)
+p2 = ggplot(slope) +
   geom_density(aes(x = d18_g), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
   geom_density(aes(x = d18_ig), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
-  geom_vline(xintercept = mean(slope$d18_g, na.rm = TRUE), color = "#2171B5", size = 1, linetype = "dashed") +
-  geom_vline(xintercept = mean(slope$d18_ig, na.rm = TRUE), color = "#D94801", size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(slope$d18_g, na.rm = TRUE), color = "#2171B5", linewidth = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(slope$d18_ig, na.rm = TRUE), color = "#D94801", linewidth = 1, linetype = "dashed") +
   theme_bw() + theme +
   annotate("text", x = -0.75, y = 4, label = expression("Benthic "*delta^"18"*"O")) +
   scale_x_continuous(limits = c(-1, 0)) +
   labs(x = "slope", y = "density")
-
+p2
 t.test(slope$bwt_g, slope$bwt_ig)
-p2 = ggplot(slope) +
+p3 = ggplot(slope) +
   geom_density(aes(x = bwt_g), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
   geom_density(aes(x = bwt_ig), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
-  geom_vline(xintercept = mean(slope$bwt_g, na.rm = TRUE), color = "#2171B5", size = 1, linetype = "dashed") +
-  geom_vline(xintercept = mean(slope$bwt_ig, na.rm = TRUE), color = "#D94801", size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(slope$bwt_g, na.rm = TRUE), color = "#2171B5", linewidth = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(slope$bwt_ig, na.rm = TRUE), color = "#D94801", linewidth = 1, linetype = "dashed") +
   theme_bw() + theme +
   annotate("text", x = 3.5, y = 1.2, label = "BWT") +
   scale_x_continuous(limits = c(0, 4)) +
   labs(x = "slope", y = "density")
-
+p3
 t.test(slope$wpwp_g, slope$wpwp_ig)
-p3 = ggplot(slope) +
+p4 = ggplot(slope) +
   geom_density(aes(x = wpwp_g), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
   geom_density(aes(x = wpwp_ig), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
-  geom_vline(xintercept = mean(slope$wpwp_g), color = "#2171B5", size = 1, linetype = "dashed") +
-  geom_vline(xintercept = mean(slope$wpwp_ig, na.rm = TRUE), color = "#D94801", size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(slope$wpwp_g), color = "#2171B5", size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(slope$wpwp_ig, na.rm = TRUE), color = "#D94801", size = 1, linetype = "dashed") +
   theme_bw() + theme +
   annotate("text", x = 2.5, y = 1, label = "WPWP") +
   scale_x_continuous(limits = c(-0.5, 3)) +
   labs(x = "slope", y = "density")
-
-ggarrange(p1, p2, p3, nrow = 1, ncol = 3, align = "hv")
-ggsave("figures/Fig_3_climate_sensitivity_pdfs.pdf", width = 7.2, height = 2.5)
+p4
+ggarrange(p1, p2, p3, p4, nrow = 1, ncol = 4, align = "hv")
+ggsave("figures/Fig_3_climate_sensitivity_pdfs.pdf", width = 9.9, height = 2.5)
