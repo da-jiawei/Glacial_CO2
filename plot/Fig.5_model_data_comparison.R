@@ -79,7 +79,7 @@ p1 = ggplot() +
   geom_point(data = modern, aes(x = forcing, y = `882`), size = 4, shape = 22, fill = "white", stroke = 1) +
   scale_fill_viridis_d() +
   theme_bw() + theme +
-  xlab(expression("ln(CO"[2]*"/C"[0]*")")) + ylab("SST (°C)") +
+  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
   scale_y_continuous(limits = c(5, 20)) +
   annotate("text", label = "Site 882", x = -2.5, y = 20)
   
@@ -94,7 +94,7 @@ p2 = ggplot() +
   geom_point(data = modern, aes(x = forcing, y = `1208`), size = 4, shape = 22, fill = "white", stroke = 1) +
   scale_fill_viridis_d() +
   theme_bw() + theme +
-  xlab(expression("ln(CO"[2]*"/C"[0]*")")) + ylab("SST (°C)") +
+  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
   scale_y_continuous(limits = c(15, 30)) +
   annotate("text", label = "Site 1208", x = -2.5, y = 30)
 
@@ -109,7 +109,7 @@ p3 = ggplot() +
   geom_point(data = modern, aes(x = forcing, y = `1090`), size = 4, shape = 22, fill = "white", stroke = 1) +
   scale_fill_viridis_d() +
   theme_bw() + theme +
-  xlab(expression("ln(CO"[2]*"/C"[0]*")")) + ylab("SST (°C)") +
+  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
   scale_y_continuous(limits = c(8, 25)) +
   annotate("text", label = "Site 1090", x = -2.5, y = 25)
 
@@ -124,7 +124,7 @@ p4 = ggplot() +
   geom_point(data = modern, aes(x = forcing, y = `722`), size = 4, shape = 22, fill = "white", stroke = 1) +
   scale_fill_viridis_d() +
   theme_bw() + theme +
-  xlab(expression("ln(CO"[2]*"/C"[0]*")")) + ylab("SST (°C)") +
+  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
   scale_y_continuous(limits = c(23, 35), breaks = seq(25, 35, 5)) +
   annotate("text", label = "Site 722", x = -2.5, y = 35)
 
@@ -139,7 +139,7 @@ p5 = ggplot() +
   geom_point(data = modern, aes(x = forcing, y = `1012`), size = 4, shape = 22, fill = "white", stroke = 1) +
   scale_fill_viridis_d() +
   theme_bw() + theme +
-  xlab(expression("ln(CO"[2]*"/C"[0]*")")) + ylab("SST (°C)") +
+  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
   scale_y_continuous(limits = c(14, 30)) +
   annotate("text", label = "Site 1012", x = -2.5, y = 30)
 
@@ -154,7 +154,7 @@ p6 = ggplot() +
   geom_point(data = modern, aes(x = forcing, y = `846`), size = 4, shape = 22, fill = "white", stroke = 1) +
   scale_fill_viridis_d() +
   theme_bw() + theme +
-  xlab(expression("ln(CO"[2]*"/C"[0]*")")) + ylab("SST (°C)") +
+  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
   scale_y_continuous(limits = c(20, 40)) +
   annotate("text", label = "Site 846", x = -2.5, y = 40)
 
@@ -169,7 +169,7 @@ p7 = ggplot() +
   geom_point(data = modern, aes(x = forcing, y = `1143`), size = 4, shape = 22, fill = "white", stroke = 1) +
   scale_fill_viridis_d() +
   theme_bw() + theme +
-  xlab(expression("ln(CO"[2]*"/C"[0]*")")) + ylab("SST (°C)") +
+  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
   scale_y_continuous(limits = c(26, 40)) +
   annotate("text", label = "Site 1143", x = -2.5, y = 40)
 
@@ -184,7 +184,7 @@ p8 = ggplot() +
   geom_point(data = modern, aes(x = forcing, y = `1148`), size = 4, shape = 22, fill = "white", stroke = 1) +
   scale_fill_viridis_d() +
   theme_bw() + theme +
-  xlab(expression("ln(CO"[2]*"/C"[0]*")")) + ylab("SST (°C)") +
+  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
   scale_y_continuous(limits = c(23, 38)) +
   annotate("text", label = "Site 1148", x = -2.5, y = 38)
 
@@ -199,7 +199,7 @@ p9 = ggplot() +
   geom_point(data = modern, aes(x = forcing, y = BWT), size = 4, shape = 22, fill = "white", stroke = 1) +
   scale_fill_viridis_d() +
   theme_bw() + theme +
-  xlab(expression("ln(CO"[2]*"/C"[0]*")")) + ylab("BWT (°C)") +
+  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
   scale_y_continuous(limits = c(0, 10)) +
   annotate("text", label = "Site 607", x = -2.5, y = 10)
 
