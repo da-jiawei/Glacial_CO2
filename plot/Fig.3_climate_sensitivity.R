@@ -195,7 +195,7 @@ p1 = ggplot(dat_g, aes(x = lnco2, y = gmst)) +
   scale_fill_brewer(palette = 1) +
   theme_bw() + theme +
   scale_x_continuous(limits = c(x.min, x.max)) +
-  scale_y_continuous(limits = c(-4, 5)) +
+  scale_y_continuous(limits = c(-7, 5)) +
   labs(x = expression("ln(CO"[2]*"/C"[o]*")"),
        y = expression(paste(Delta*"GMST (", degree, "C)")))
 
@@ -246,7 +246,7 @@ p5 = ggplot(dat_g, aes(x = r, y = gmst)) +
   scale_fill_brewer(palette = 1) +
   theme_bw() + theme +
   scale_x_continuous(limits = c(x.min, x.max)) +
-  scale_y_continuous(limits = c(-4, 5)) +
+  scale_y_continuous(limits = c(-7, 5)) +
   labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
        y = expression(paste(Delta*"GMST (", degree, "C)")))
 
@@ -301,7 +301,7 @@ p1 = ggplot(dat_ig, aes(x = lnco2, y = gmst)) +
   scale_fill_brewer(palette = 7) +
   theme_bw() + theme +
   scale_x_continuous(limits = c(x.min, x.max)) +
-  scale_y_continuous(limits = c(-4, 5)) +
+  scale_y_continuous(limits = c(-7, 5)) +
   labs(x = expression("ln(CO"[2]*"/C"[o]*")"),
        y = expression(paste(Delta*"GMST (", degree, "C)")))
 
@@ -352,7 +352,7 @@ p5 = ggplot(dat_ig, aes(x = r, y = gmst)) +
   scale_fill_brewer(palette = 7) +
   theme_bw() + theme +
   scale_x_continuous(limits = c(x.min, x.max)) +
-  scale_y_continuous(limits = c(-4, 5)) +
+  scale_y_continuous(limits = c(-7, 5)) +
   labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
        y = expression(paste(Delta*"GMST (", degree, "C)")))
 
@@ -363,7 +363,7 @@ p6 = ggplot(dat_ig, aes(x = r, y = d18)) +
   geom_point(aes(fill = time), shape = 21, size = 3) +
   scale_fill_brewer(palette = 7) +
   theme_bw() + theme +
-  scale_x_continuous(limits = c(-6, 1.5)) +
+  scale_x_continuous(limits = c(x.min, x.max)) +
   scale_y_reverse(limits = c(4.7, 3.1)) +
   labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
        y = expression(delta^"18"*"O (\u2030)"))
@@ -536,24 +536,18 @@ for (i in 1:nsyth) {
   slope$gmst_g[i] = ifelse(summary(m_gmst)$coefficients[2, "Pr(>|t|)"]<0.05, m_gmst$coefficients[2], NA)
   m_d18 = lm(d18.g ~ df.g, data = subgroup)
   slope$d18_g[i] = ifelse(summary(m_d18)$coefficients[2, "Pr(>|t|)"]<0.05, m_d18$coefficients[2], NA)
-  # slope$d18_g[i] = m_d18$coefficients[2]
   m_bwt = lm(bwt.g ~ df.g, data = subgroup)
   slope$bwt_g[i] = ifelse(summary(m_bwt)$coefficients[2, "Pr(>|t|)"]<0.05, m_bwt$coefficients[2], NA)
-  # slope$bwt_g[i] = m_bwt$coefficients[2]
   m_sst = lm(sst.g ~ df.g, data = subgroup)
-  # slope$wpwp_g[i] = ifelse(summary(m_sst)$coefficients[2, "Pr(>|t|)"]<0.05, m_sst$coefficients[2], NA)
-  slope$wpwp_g[i] = m_sst$coefficients[2]
+  slope$wpwp_g[i] = ifelse(summary(m_sst)$coefficients[2, "Pr(>|t|)"]<0.05, m_sst$coefficients[2], NA)
   m_gmst = lm(gmst.ig ~ df.ig, data = subgroup)
   slope$gmst_ig[i] = ifelse(summary(m_gmst)$coefficients[2, "Pr(>|t|)"]<0.05, m_gmst$coefficients[2], NA)
   m_d18 = lm(d18.ig ~ df.ig, data = subgroup)
   slope$d18_ig[i] = ifelse(summary(m_d18)$coefficients[2, "Pr(>|t|)"]<0.05, m_d18$coefficients[2], NA)
-  # slope$d18_ig[i] = m_d18$coefficients[2]
   m_bwt = lm(bwt.ig ~ df.ig, data = subgroup)
   slope$bwt_ig[i] = ifelse(summary(m_bwt)$coefficients[2, "Pr(>|t|)"]<0.05, m_bwt$coefficients[2], NA)
-  # slope$bwt_ig[i] = m_bwt$coefficients[2]
   m_sst = lm(sst.ig ~ df.ig, data = subgroup)
   slope$wpwp_ig[i] = ifelse(summary(m_sst)$coefficients[2, "Pr(>|t|)"]<0.05, m_sst$coefficients[2], NA)
-  # slope$wpwp_ig[i] = m_sst$coefficients[2]
 }
 
 # plot ----
@@ -594,7 +588,7 @@ t.test(slope$wpwp_g, slope$wpwp_ig)
 p4 = ggplot(slope) +
   geom_density(aes(x = wpwp_g), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
   geom_density(aes(x = wpwp_ig), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(slope$wpwp_g), color = "#2171B5", size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(slope$wpwp_g, na.rm = TRUE), color = "#2171B5", size = 1, linetype = "dashed") +
   geom_vline(xintercept = median(slope$wpwp_ig, na.rm = TRUE), color = "#D94801", size = 1, linetype = "dashed") +
   theme_bw() + theme +
   annotate("text", x = 2.5, y = 1, label = "WPWP") +
