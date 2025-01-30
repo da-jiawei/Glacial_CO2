@@ -68,6 +68,10 @@ dat = read_xlsx("data/marine proxies/WP.xlsx", sheet = "1148")
 sst_1148 = binned_mean(dat, "1148")
 
 # plot ----
+m1 = lm(sst_ig~r_ig, sst_882)
+summary(m1)
+m2 = lm(sst_g~r_g, sst_882)
+summary(m2)
 p1 = ggplot() +
   geom_point(data = cesm, aes(x = forcing, y = `882`), size = 1.5, color = "bisque") +
   geom_point(data = hadgem, aes(x = forcing, y = `882`), size = 1.5, color = "cornflowerblue") +
@@ -83,6 +87,10 @@ p1 = ggplot() +
   scale_y_continuous(limits = c(5, 20)) +
   annotate("text", label = "Site 882", x = -2.5, y = 20)
   
+m1 = lm(sst_ig~r_ig, sst_1208)
+summary(m1)
+m2 = lm(sst_g~r_g, sst_1208)
+summary(m2)
 p2 = ggplot() +
   geom_point(data = cesm, aes(x = forcing, y = `1208`), size = 1.5, color = "bisque") +
   geom_point(data = hadgem, aes(x = forcing, y = `1208`), size = 1.5, color = "cornflowerblue") +
@@ -98,6 +106,10 @@ p2 = ggplot() +
   scale_y_continuous(limits = c(15, 30)) +
   annotate("text", label = "Site 1208", x = -2.5, y = 30)
 
+m1 = lm(sst_ig~r_ig, sst_1090)
+summary(m1)
+m2 = lm(sst_g~r_g, sst_1090)
+summary(m2)
 p3 = ggplot() +
   geom_point(data = cesm, aes(x = forcing, y = `1090`), size = 1.5, color = "bisque") +
   geom_point(data = hadgem, aes(x = forcing, y = `1090`), size = 1.5, color = "cornflowerblue") +
@@ -113,6 +125,10 @@ p3 = ggplot() +
   scale_y_continuous(limits = c(8, 25)) +
   annotate("text", label = "Site 1090", x = -2.5, y = 25)
 
+m1 = lm(sst_ig~r_ig, sst_722)
+summary(m1)
+m2 = lm(sst_g~r_g, sst_722)
+summary(m2)
 p4 = ggplot() +
   geom_point(data = cesm, aes(x = forcing, y = `722`), size = 1.5, color = "bisque") +
   geom_point(data = hadgem, aes(x = forcing, y = `722`), size = 1.5, color = "cornflowerblue") +
@@ -128,6 +144,10 @@ p4 = ggplot() +
   scale_y_continuous(limits = c(23, 35), breaks = seq(25, 35, 5)) +
   annotate("text", label = "Site 722", x = -2.5, y = 35)
 
+m1 = lm(sst_ig~r_ig, sst_1012)
+summary(m1)
+m2 = lm(sst_g~r_g, sst_1012)
+summary(m2)
 p5 = ggplot() +
   geom_point(data = cesm, aes(x = forcing, y = `1012`), size = 1.5, color = "bisque") +
   geom_point(data = hadgem, aes(x = forcing, y = `1012`), size = 1.5, color = "cornflowerblue") +
@@ -143,6 +163,10 @@ p5 = ggplot() +
   scale_y_continuous(limits = c(14, 30)) +
   annotate("text", label = "Site 1012", x = -2.5, y = 30)
 
+m1 = lm(sst_ig~r_ig, sst_846)
+summary(m1)
+m2 = lm(sst_g~r_g, sst_846)
+summary(m2)
 p6 = ggplot() +
   geom_point(data = cesm, aes(x = forcing, y = `846`), size = 1.5, color = "bisque") +
   geom_point(data = hadgem, aes(x = forcing, y = `846`), size = 1.5, color = "cornflowerblue") +
@@ -158,6 +182,10 @@ p6 = ggplot() +
   scale_y_continuous(limits = c(20, 40)) +
   annotate("text", label = "Site 846", x = -2.5, y = 40)
 
+m1 = lm(sst~r, dat_ig)
+summary(m1)
+m2 = lm(sst~r, dat_g)
+summary(m2)
 p7 = ggplot() +
   geom_point(data = cesm, aes(x = forcing, y = `1143`), size = 1.5, color = "bisque") +
   geom_point(data = hadgem, aes(x = forcing, y = `1143`), size = 1.5, color = "cornflowerblue") +
@@ -173,6 +201,10 @@ p7 = ggplot() +
   scale_y_continuous(limits = c(26, 40)) +
   annotate("text", label = "Site 1143", x = -2.5, y = 40)
 
+m1 = lm(sst_ig~r_ig, sst_1148)
+summary(m1)
+m2 = lm(sst_g~r_g, sst_1148)
+summary(m2)
 p8 = ggplot() +
   geom_point(data = cesm, aes(x = forcing, y = `1148`), size = 1.5, color = "bisque") +
   geom_point(data = hadgem, aes(x = forcing, y = `1148`), size = 1.5, color = "cornflowerblue") +
@@ -188,6 +220,10 @@ p8 = ggplot() +
   scale_y_continuous(limits = c(23, 38)) +
   annotate("text", label = "Site 1148", x = -2.5, y = 38)
 
+m1 = lm(bwt~r, dat_ig)
+summary(m1)
+m2 = lm(bwt~r, dat_g)
+summary(m2)
 p9 = ggplot() +
   geom_point(data = cesm, aes(x = forcing, y = `607`), size = 1.5, color = "bisque") +
   geom_point(data = hadgem, aes(x = forcing, y = `607`), size = 1.5, color = "cornflowerblue") +
