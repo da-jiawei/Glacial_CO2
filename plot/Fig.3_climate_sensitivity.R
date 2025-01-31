@@ -324,61 +324,61 @@ slope_sst = slope_pdf("sst", "sst.sd")
 t.test(slope_gmst$glacial,slope_gmst$interglacial)
 cohen.d(slope_gmst$glacial,slope_gmst$interglacial)
 p1 = ggplot(slope_gmst) +
-  geom_density(aes(x = glacial), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
-  geom_density(aes(x = interglacial), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(slope_gmst$glacial, na.rm = TRUE), color = "#2171B5", linewidth = 1, linetype = "dashed") +
-  geom_vline(xintercept = median(slope_gmst$interglacial, na.rm = TRUE), color = "#D94801", linewidth = 1, linetype = "dashed") +
+  geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
+  geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
+  geom_vline(xintercept = median(slope_gmst$glacial, na.rm = TRUE), color = pal[1], linewidth = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(slope_gmst$interglacial, na.rm = TRUE), color = pal[2], linewidth = 1, linetype = "dashed") +
   theme_bw() + theme +
   scale_x_continuous(limits = c(-2, 6)) +
   labs(x = "slope", y = "density") +
   annotate("text", x = -1, y = 0.6, label = expression(Delta*"GMST")) +
-  annotate("text", label = round(median(slope_gmst$glacial, na.rm = TRUE), 2), x = 5, y = 0.6, color = pal[2]) +
-  annotate("text", label = round(median(slope_gmst$interglacial, na.rm = TRUE), 2), x = 5, y = 0.5, color = pal[1]) +
+  annotate("text", label = round(median(slope_gmst$glacial, na.rm = TRUE), 2), x = 5, y = 0.6, color = pal[1]) +
+  annotate("text", label = round(median(slope_gmst$interglacial, na.rm = TRUE), 2), x = 5, y = 0.5, color = pal[2]) +
   annotate("text", label = paste("d =", round(cohen.d(slope_gmst$glacial, slope_gmst$interglacial)$estimate, 2)), x = 5, y = 0.4)
 
 t.test(slope_d18$glacial,slope_d18$interglacial)
 cohen.d(slope_d18$interglacial, slope_d18$glacial)
 p2 = ggplot(slope_d18) +
-  geom_density(aes(x = glacial), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
-  geom_density(aes(x = interglacial), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(slope_d18$glacial, na.rm = TRUE), color = "#2171B5", linewidth = 1, linetype = "dashed") +
-  geom_vline(xintercept = median(slope_d18$interglacial, na.rm = TRUE), color = "#D94801", linewidth = 1, linetype = "dashed") +
+  geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
+  geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
+  geom_vline(xintercept = median(slope_d18$glacial, na.rm = TRUE), color = pal[1], linewidth = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(slope_d18$interglacial, na.rm = TRUE), color = pal[2], linewidth = 1, linetype = "dashed") +
   theme_bw() + theme +
   scale_x_continuous(limits = c(-1, 0.5)) +
   labs(x = "slope", y = "density") +
   annotate("text", x = -0.7, y = 3.5, label = expression(delta^"18"*"O")) +
-  annotate("text", label = round(median(slope_d18$glacial, na.rm = TRUE), 2), x = -0.7, y = 3, color = pal[2]) +
-  annotate("text", label = round(median(slope_d18$interglacial, na.rm = TRUE), 2), x = -0.7, y = 2.5, color = pal[1]) +
+  annotate("text", label = round(median(slope_d18$glacial, na.rm = TRUE), 2), x = -0.7, y = 3, color = pal[1]) +
+  annotate("text", label = round(median(slope_d18$interglacial, na.rm = TRUE), 2), x = -0.7, y = 2.5, color = pal[2]) +
   annotate("text", label = paste("d =", round(cohen.d(slope_d18$interglacial, slope_d18$glacial)$estimate, 2)), x = -0.7, y = 2)
 
 t.test(slope_bwt$glacial,slope_bwt$interglacial)
 cohen.d(slope_bwt$glacial, slope_bwt$interglacial)
 p3 = ggplot(slope_bwt) +
-  geom_density(aes(x = glacial), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
-  geom_density(aes(x = interglacial), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(slope_bwt$glacial, na.rm = TRUE), color = "#2171B5", linewidth = 1, linetype = "dashed") +
-  geom_vline(xintercept = median(slope_bwt$interglacial, na.rm = TRUE), color = "#D94801", linewidth = 1, linetype = "dashed") +
+  geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
+  geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
+  geom_vline(xintercept = median(slope_bwt$glacial, na.rm = TRUE), color = pal[1], linewidth = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(slope_bwt$interglacial, na.rm = TRUE), color = pal[2], linewidth = 1, linetype = "dashed") +
   theme_bw() + theme +
   scale_x_continuous(limits = c(-2, 3)) +
   labs(x = "slope", y = "density") +
   annotate("text", x = -1, y = 0.8, label = "BWT") +
-  annotate("text", label = round(median(slope_bwt$glacial, na.rm = TRUE), 2), x = -1, y = 0.7, color = pal[2]) +
-  annotate("text", label = round(median(slope_bwt$interglacial, na.rm = TRUE), 2), x = -1, y = 0.6, color = pal[1]) +
+  annotate("text", label = round(median(slope_bwt$glacial, na.rm = TRUE), 2), x = -1, y = 0.7, color = pal[1]) +
+  annotate("text", label = round(median(slope_bwt$interglacial, na.rm = TRUE), 2), x = -1, y = 0.6, color = pal[2]) +
   annotate("text", label = paste("d =", round(cohen.d(slope_bwt$glacial, slope_bwt$interglacial)$estimate, 2)), x = -1, y = 0.5)
 
 t.test(slope_sst$glacial,slope_sst$interglacial)
 cohen.d(slope_sst$glacial, slope_sst$interglacial)
 p4 = ggplot(slope_sst) +
-  geom_density(aes(x = glacial), color = "#2171B5", fill = "#2171B5", size = 1, alpha = 0.3) +
-  geom_density(aes(x = interglacial), color = "#D94801", fill = "#D94801", size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(slope_sst$glacial, na.rm = TRUE), color = "#2171B5", linewidth = 1, linetype = "dashed") +
-  geom_vline(xintercept = median(slope_sst$interglacial, na.rm = TRUE), color = "#D94801", linewidth = 1, linetype = "dashed") +
+  geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
+  geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
+  geom_vline(xintercept = median(slope_sst$glacial, na.rm = TRUE), color = pal[1], linewidth = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(slope_sst$interglacial, na.rm = TRUE), color = pal[2], linewidth = 1, linetype = "dashed") +
   theme_bw() + theme +
   scale_x_continuous(limits = c(-2, 3)) +
   labs(x = "slope", y = "density") +
-  annotate("text", x = -1, y = 1, label = "BWT") +
-  annotate("text", label = round(median(slope_sst$glacial, na.rm = TRUE), 2), x = -1, y = 0.7, color = pal[2]) +
-  annotate("text", label = round(median(slope_sst$interglacial, na.rm = TRUE), 2), x = -1, y = 0.6, color = pal[1]) +
+  annotate("text", x = -1, y = 1, label = "SST") +
+  annotate("text", label = round(median(slope_sst$glacial, na.rm = TRUE), 2), x = -1, y = 0.7, color = pal[1]) +
+  annotate("text", label = round(median(slope_sst$interglacial, na.rm = TRUE), 2), x = -1, y = 0.6, color = pal[2]) +
   annotate("text", label = paste("d =", round(cohen.d(slope_sst$glacial, slope_sst$interglacial)$estimate, 2)), x = -1, y = 0.5)
 
 ggarrange(p1, p2, p3, p4, nrow = 1, ncol = 4, align = "hv")
