@@ -125,8 +125,8 @@ for (i in 1:nrow(forcing_g)) {
   rli_s = r_li_g %>% filter(time == forcing_g$time[i])
   subsample$CO2 = sample(co2_s$CO2, nsyth, replace = TRUE)
   subsample$R_li = sample(rli_s$RLI, nsyth, replace = TRUE)
-  lnco2 = 5.35 * log(subsample$CO2 / 278)
-  R_total = 0.67 * (lnco2 + subsample$R_li)
+  lnco2 = log(subsample$CO2 / 278)
+  R_total = 0.67 * (5.35 * lnco2 + subsample$R_li)
   # conversion factor of 0.67 to account for other the influence of other long-term processes
   # namely vegetation, aerosol, and non-CO2 greenhouse gas changes
   forcing_g$lnco2[i] = mean(lnco2)
@@ -165,8 +165,8 @@ for (i in 1:nrow(forcing_ig)) {
   rli_s = r_li_ig %>% filter(time == forcing_ig$time[i])
   subsample$CO2 = sample(co2_s$CO2, nsyth, replace = TRUE)
   subsample$R_li = sample(rli_s$RLI, nsyth, replace = TRUE)
-  lnco2 = 5.35 * log(subsample$CO2 / 278)
-  R_total = 0.67 * (lnco2 + subsample$R_li)
+  lnco2 = log(subsample$CO2 / 278)
+  R_total = 0.67 * (5.35 * lnco2 + subsample$R_li)
   # conversion factor of 0.67 to account for other the influence of other long-term processes
   # namely vegetation, aerosol, and non-CO2 greenhouse gas changes
   forcing_ig$lnco2[i] = mean(lnco2)
