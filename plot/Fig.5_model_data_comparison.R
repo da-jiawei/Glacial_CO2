@@ -1,7 +1,10 @@
 library(tidyverse)
 library(ggpubr)
 library(readxl)
+library(effsize)
 source('plot/functions.R')
+set.seed(42)
+nsyth = 10000
 theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
               axis.text.y = element_text(margin = margin(r = 0.1, unit = "cm")),
               axis.ticks.length=unit(0.15, "cm"),
@@ -29,215 +32,102 @@ cesm = read_xlsx("data/Model.xlsx", sheet = 2) %>%
 hadgem = read_xlsx("data/Model.xlsx", sheet = 3) %>%
   mutate(forcing = 5.35*log(CO2/278))
 
-## records
 dat_g = read.csv("output/climate_sensitivity_glacial.csv")
 r_g = dat_g[, c("time", "r", "r.sd")]
 dat_ig = read.csv("output/climate_sensitivity_interglacial.csv")
 r_ig = dat_ig[, c("time", "r", "r.sd")]
+sst_882 = read_xlsx("data/marine proxies/MidHighLatitudes.xlsx", sheet = "882")
+sst_1208 = read_xlsx("data/marine proxies/MidHighLatitudes.xlsx", sheet = "1208")
+sst_1090 = read_xlsx("data/marine proxies/MidHighLatitudes.xlsx", sheet = "1090")
+sst_722 = read_xlsx("data/marine proxies/UpwellingZones.xlsx", sheet = "722")
+sst_1012 = read_xlsx("data/marine proxies/UpwellingZones.xlsx", sheet = "1012")
+sst_846 = read_xlsx("data/marine proxies/UpwellingZones.xlsx", sheet = "846")
+sst_1148 = read_xlsx("data/marine proxies/WP.xlsx", sheet = "1148")
 
-binned_mean = function(dat, site) {
-  dat_g = filter_g(dat, "age") %>% mutate(assign_time_group(age, 0.3, 2.7))
-  colnames(dat_g)[3] = "time"
-  dat_g = dat_g %>%
-    group_by(time) %>%
-    summarise(mean = mean(SST), sd = sd(SST))
-  dat_ig = filter_ig(dat, "age") %>% mutate(assign_time_group(age, 0.3, 2.7))
-  colnames(dat_ig)[3] = "time"
-  dat_ig = dat_ig %>%
-    group_by(time) %>%
-    summarise(mean = mean(SST), sd = sd(SST))
-  dat_list = list(r_g, dat_g, r_ig, dat_ig)
-  dat = reduce(dat_list, full_join, by = "time")
-  names(dat) = c("time", "r_g", "r.sd_g", "sst_g", "sst.sd_g", "r_ig", "r.sd_ig", "sst_ig", "sst.sd_ig")
+# calculating the statistics of each time period ----
+bin_stat = function(num){
+  df_g = filter_g(get(paste0("sst_", num)), "age") %>% 
+    mutate(time = assign_time_group(age, 300, 2700)) %>%
+    group_by(time) %>% 
+    summarise(sst = mean(SST), sst.sd = sd(SST), count = n())
+  df_g$period = "glacial"
+  df_g = left_join(r_g, df_g, by = "time")
+  df_ig = filter_ig(get(paste0("sst_", num)), "age") %>% 
+    mutate(time = assign_time_group(age, 300, 2700)) %>%
+    group_by(time) %>% 
+    summarise(sst = mean(SST), sst.sd = sd(SST), count = n())
+  df_ig$period = "interglacial"
+  df_ig = left_join(r_ig, df_ig, by = "time")
+  dat = rbind(df_g, df_ig)
   return(dat)
 }
 
-dat = read_xlsx("data/marine proxies/MidHighLatitudes.xlsx", sheet = "882")
-sst_882 = binned_mean(dat, "882")
-dat = read_xlsx("data/marine proxies/MidHighLatitudes.xlsx", sheet = "1208")
-sst_1208 = binned_mean(dat, "1208")
-dat = read_xlsx("data/marine proxies/MidHighLatitudes.xlsx", sheet = "1090")
-sst_1090 = binned_mean(dat, "1090")
-dat = read_xlsx("data/marine proxies/UpwellingZones.xlsx", sheet = "722")
-sst_722 = binned_mean(dat, "722")
-dat = read_xlsx("data/marine proxies/UpwellingZones.xlsx", sheet = "1012")
-sst_1012 = binned_mean(dat, "1012")
-dat = read_xlsx("data/marine proxies/UpwellingZones.xlsx", sheet = "846")
-sst_846 = binned_mean(dat, "846")
-dat = read_xlsx("data/marine proxies/WP.xlsx", sheet = "1148")
-sst_1148 = binned_mean(dat, "1148")
+slope_882 = bin_stat(882)
+slope_1208 = bin_stat(1208)
+slope_1090 = bin_stat(1090)
+slope_722 = bin_stat(722)
+slope_1012 = bin_stat(1012)
+slope_846 = bin_stat(846)
+slope_1148 = bin_stat(1148)
+slope_1143_g = dat_g[, c("time", "r", "r.sd", "sst", "sst.sd")] %>% 
+  mutate(period = "glacial")
+slope_1143_ig = dat_ig[, c("time", "r", "r.sd", "sst", "sst.sd")] %>% 
+  mutate(period = "interglacial")
+slope_1143 = rbind(slope_1143_g, slope_1143_ig)
+slope_bwt_g = dat_g[, c("time", "r", "r.sd", "bwt", "bwt.sd")] %>% 
+  mutate(period = "glacial")
+slope_bwt_ig = dat_ig[, c("time", "r", "r.sd", "bwt", "bwt.sd")] %>% 
+  mutate(period = "interglacial")
+slope_bwt = rbind(slope_bwt_g, slope_bwt_ig) %>%
+  rename(sst = bwt, sst.sd = bwt.sd)
 
 # plot ----
-m1 = lm(sst_ig~r_ig, sst_882)
-summary(m1)
-m2 = lm(sst_g~r_g, sst_882)
-summary(m2)
-p1 = ggplot() +
-  geom_point(data = cesm, aes(x = forcing, y = `882`), size = 1.5, color = "bisque") +
-  geom_point(data = hadgem, aes(x = forcing, y = `882`), size = 1.5, color = "cornflowerblue") +
-  geom_smooth(data = sst_882, aes(x = r_ig, y = sst_ig),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#D94801", fill = "#D94801") +
-  geom_smooth(data = sst_882, aes(x = r_g, y = sst_g),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#2171B5", fill = "#2171B5") +
-  geom_point(data = longterm, aes(x = forcing, y = `882`, fill = Model), size = 3, shape = 21) +
-  geom_point(data = modern, aes(x = forcing, y = `882`), size = 4, shape = 22, fill = "white", stroke = 1) +
-  scale_fill_viridis_d() +
-  theme_bw() + theme +
-  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
-  scale_y_continuous(limits = c(5, 20)) +
-  annotate("text", label = "Site 882", x = -2.5, y = 20)
-  
-m1 = lm(sst_ig~r_ig, sst_1208)
-summary(m1)
-m2 = lm(sst_g~r_g, sst_1208)
-summary(m2)
-p2 = ggplot() +
-  geom_point(data = cesm, aes(x = forcing, y = `1208`), size = 1.5, color = "bisque") +
-  geom_point(data = hadgem, aes(x = forcing, y = `1208`), size = 1.5, color = "cornflowerblue") +
-  geom_smooth(data = sst_1208, aes(x = r_ig, y = sst_ig),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#D94801", fill = "#D94801") +
-  geom_smooth(data = sst_1208, aes(x = r_g, y = sst_g),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#2171B5", fill = "#2171B5") +
-  geom_point(data = longterm, aes(x = forcing, y = `1208`, fill = Model), size = 3, shape = 21) +
-  geom_point(data = modern, aes(x = forcing, y = `1208`), size = 4, shape = 22, fill = "white", stroke = 1) +
-  scale_fill_viridis_d() +
-  theme_bw() + theme +
-  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
-  scale_y_continuous(limits = c(15, 30)) +
-  annotate("text", label = "Site 1208", x = -2.5, y = 30)
+plot_dm = function(num){
+  df_name = paste0("slope_", num)
+  dat = get(df_name)
+  glacial = dat %>% filter(period == "glacial")
+  interglacial = dat %>% filter(period == "interglacial")
+  col_name = as.character(num)
+  ggplot() +
+    geom_point(data = cesm, aes(x = forcing, y = .data[[col_name]]), size = 1.5, color = "bisque") +
+    geom_point(data = hadgem, aes(x = forcing, y = .data[[col_name]]), size = 1.5, color = "cornflowerblue") +
+    geom_smooth(data = interglacial, aes(x = r, y = sst),
+                method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#D94801", fill = "#D94801") +
+    geom_smooth(data = glacial, aes(x = r, y = sst),
+                method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#2171B5", fill = "#2171B5") +
+    geom_point(data = longterm, aes(x = forcing, y = .data[[col_name]], fill = Model), size = 3, shape = 21) +
+    geom_point(data = modern, aes(x = forcing, y = .data[[col_name]]), size = 4, shape = 22, fill = "white", stroke = 1) +
+    scale_fill_viridis_d() +
+    theme_bw() + theme +
+    xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
+    scale_x_continuous(limits = c(-3, 12)) +
+    annotate("text", x = 0, y = max(longterm[[col_name]])-1, label = paste0("Site ", col_name))
+}
+p1 = plot_dm(882) 
+p2 = plot_dm(1208) 
+p3 = plot_dm(1090)
+p4 = plot_dm(722)
+p5 = plot_dm(1012)
+p6 = plot_dm(846)
+p7 = plot_dm(1143)
+p8 = plot_dm(1148)
 
-m1 = lm(sst_ig~r_ig, sst_1090)
-summary(m1)
-m2 = lm(sst_g~r_g, sst_1090)
-summary(m2)
-p3 = ggplot() +
-  geom_point(data = cesm, aes(x = forcing, y = `1090`), size = 1.5, color = "bisque") +
-  geom_point(data = hadgem, aes(x = forcing, y = `1090`), size = 1.5, color = "cornflowerblue") +
-  geom_smooth(data = sst_1090, aes(x = r_ig, y = sst_ig),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#D94801", fill = "#D94801") +
-  geom_smooth(data = sst_1090, aes(x = r_g, y = sst_g),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#2171B5", fill = "#2171B5") +
-  geom_point(data = longterm, aes(x = forcing, y = `1090`, fill = Model), size = 3, shape = 21) +
-  geom_point(data = modern, aes(x = forcing, y = `1090`), size = 4, shape = 22, fill = "white", stroke = 1) +
-  scale_fill_viridis_d() +
-  theme_bw() + theme +
-  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
-  scale_y_continuous(limits = c(8, 25)) +
-  annotate("text", label = "Site 1090", x = -2.5, y = 25)
-
-m1 = lm(sst_ig~r_ig, sst_722)
-summary(m1)
-m2 = lm(sst_g~r_g, sst_722)
-summary(m2)
-p4 = ggplot() +
-  geom_point(data = cesm, aes(x = forcing, y = `722`), size = 1.5, color = "bisque") +
-  geom_point(data = hadgem, aes(x = forcing, y = `722`), size = 1.5, color = "cornflowerblue") +
-  geom_smooth(data = sst_722, aes(x = r_ig, y = sst_ig),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#D94801", fill = "#D94801") +
-  geom_smooth(data = sst_722, aes(x = r_g, y = sst_g),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#2171B5", fill = "#2171B5") +
-  geom_point(data = longterm, aes(x = forcing, y = `722`, fill = Model), size = 3, shape = 21) +
-  geom_point(data = modern, aes(x = forcing, y = `722`), size = 4, shape = 22, fill = "white", stroke = 1) +
-  scale_fill_viridis_d() +
-  theme_bw() + theme +
-  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
-  scale_y_continuous(limits = c(23, 35), breaks = seq(25, 35, 5)) +
-  annotate("text", label = "Site 722", x = -2.5, y = 35)
-
-m1 = lm(sst_ig~r_ig, sst_1012)
-summary(m1)
-m2 = lm(sst_g~r_g, sst_1012)
-summary(m2)
-p5 = ggplot() +
-  geom_point(data = cesm, aes(x = forcing, y = `1012`), size = 1.5, color = "bisque") +
-  geom_point(data = hadgem, aes(x = forcing, y = `1012`), size = 1.5, color = "cornflowerblue") +
-  geom_smooth(data = sst_1012, aes(x = r_ig, y = sst_ig),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#D94801", fill = "#D94801") +
-  geom_smooth(data = sst_1012, aes(x = r_g, y = sst_g),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#2171B5", fill = "#2171B5") +
-  geom_point(data = longterm, aes(x = forcing, y = `1012`, fill = Model), size = 3, shape = 21) +
-  geom_point(data = modern, aes(x = forcing, y = `1012`), size = 4, shape = 22, fill = "white", stroke = 1) +
-  scale_fill_viridis_d() +
-  theme_bw() + theme +
-  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
-  scale_y_continuous(limits = c(14, 30)) +
-  annotate("text", label = "Site 1012", x = -2.5, y = 30)
-
-m1 = lm(sst_ig~r_ig, sst_846)
-summary(m1)
-m2 = lm(sst_g~r_g, sst_846)
-summary(m2)
-p6 = ggplot() +
-  geom_point(data = cesm, aes(x = forcing, y = `846`), size = 1.5, color = "bisque") +
-  geom_point(data = hadgem, aes(x = forcing, y = `846`), size = 1.5, color = "cornflowerblue") +
-  geom_smooth(data = sst_846, aes(x = r_ig, y = sst_ig),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#D94801", fill = "#D94801") +
-  geom_smooth(data = sst_846, aes(x = r_g, y = sst_g),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#2171B5", fill = "#2171B5") +
-  geom_point(data = longterm, aes(x = forcing, y = `846`, fill = Model), size = 3, shape = 21) +
-  geom_point(data = modern, aes(x = forcing, y = `846`), size = 4, shape = 22, fill = "white", stroke = 1) +
-  scale_fill_viridis_d() +
-  theme_bw() + theme +
-  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
-  scale_y_continuous(limits = c(20, 40)) +
-  annotate("text", label = "Site 846", x = -2.5, y = 40)
-
-m1 = lm(sst~r, dat_ig)
-summary(m1)
-m2 = lm(sst~r, dat_g)
-summary(m2)
-p7 = ggplot() +
-  geom_point(data = cesm, aes(x = forcing, y = `1143`), size = 1.5, color = "bisque") +
-  geom_point(data = hadgem, aes(x = forcing, y = `1143`), size = 1.5, color = "cornflowerblue") +
-  geom_smooth(data = dat_ig, aes(x = r, y = sst),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#D94801", fill = "#D94801") +
-  geom_smooth(data = dat_g, aes(x = r, y = sst),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#2171B5", fill = "#2171B5") +
-  geom_point(data = longterm, aes(x = forcing, y = `1143`, fill = Model), size = 3, shape = 21) +
-  geom_point(data = modern, aes(x = forcing, y = `1143`), size = 4, shape = 22, fill = "white", stroke = 1) +
-  scale_fill_viridis_d() +
-  theme_bw() + theme +
-  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
-  scale_y_continuous(limits = c(26, 40)) +
-  annotate("text", label = "Site 1143", x = -2.5, y = 40)
-
-m1 = lm(sst_ig~r_ig, sst_1148)
-summary(m1)
-m2 = lm(sst_g~r_g, sst_1148)
-summary(m2)
-p8 = ggplot() +
-  geom_point(data = cesm, aes(x = forcing, y = `1148`), size = 1.5, color = "bisque") +
-  geom_point(data = hadgem, aes(x = forcing, y = `1148`), size = 1.5, color = "cornflowerblue") +
-  geom_smooth(data = sst_1148, aes(x = r_ig, y = sst_ig),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#D94801", fill = "#D94801") +
-  geom_smooth(data = sst_1148, aes(x = r_g, y = sst_g),
-              method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#2171B5", fill = "#2171B5") +
-  geom_point(data = longterm, aes(x = forcing, y = `1148`, fill = Model), size = 3, shape = 21) +
-  geom_point(data = modern, aes(x = forcing, y = `1148`), size = 4, shape = 22, fill = "white", stroke = 1) +
-  scale_fill_viridis_d() +
-  theme_bw() + theme +
-  xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
-  scale_y_continuous(limits = c(23, 38)) +
-  annotate("text", label = "Site 1148", x = -2.5, y = 38)
-
-m1 = lm(bwt~r, dat_ig)
-summary(m1)
-m2 = lm(bwt~r, dat_g)
-summary(m2)
+glacial = slope_bwt %>% filter(period == "glacial")
+interglacial = slope_bwt %>% filter(period == "interglacial")
 p9 = ggplot() +
-  geom_point(data = cesm, aes(x = forcing, y = `607`), size = 1.5, color = "bisque") +
-  geom_point(data = hadgem, aes(x = forcing, y = `607`), size = 1.5, color = "cornflowerblue") +
-  geom_smooth(data = dat_ig, aes(x = r, y = bwt),
+  # geom_point(data = cesm, aes(x = forcing, y = `607`), size = 1.5, color = "bisque") +
+  # geom_point(data = hadgem, aes(x = forcing, y = `607`), size = 1.5, color = "cornflowerblue") +
+  geom_smooth(data = interglacial, aes(x = r, y = sst),
               method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#D94801", fill = "#D94801") +
-  geom_smooth(data = dat_g, aes(x = r, y = bwt),
+  geom_smooth(data = glacial, aes(x = r, y = sst),
               method = "lm", formula = y ~ x, show.legend = F, span = 1, color = "#2171B5", fill = "#2171B5") +
   geom_point(data = longterm, aes(x = forcing, y = BWT, fill = Model), size = 3, shape = 21) +
   geom_point(data = modern, aes(x = forcing, y = BWT), size = 4, shape = 22, fill = "white", stroke = 1) +
   scale_fill_viridis_d() +
   theme_bw() + theme +
   xlab(expression(Delta*italic(F)*" (W m"^"-2"*")")) + ylab("SST (°C)") +
-  scale_y_continuous(limits = c(0, 10)) +
-  annotate("text", label = "Site 607", x = -2.5, y = 10)
+  scale_x_continuous(limits = c(-3, 12)) +
+  annotate("text", label = "Site 607", x = 0, y = 10)
 
 ggarrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, nrow = 3, ncol = 3, align = "hv",
           labels = c("a", "b", "c", "d", "e", "f", "g", "h", "i"),

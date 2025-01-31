@@ -27,51 +27,53 @@ paleosol_g = paleosol_g[, c(4, 17)] %>% drop_na()
 names(paleosol_g) = c("age", "CO2")
 # other proxy data
 gmst = read.csv("data/GMST.csv")
-boron = read.csv("data/co2_compilation/boron_CO2.csv")
-ice_core = read.csv("data/co2_compilation/ice_core_co2.csv")
-blue_ice = read.csv("data/co2_compilation/blue.ice.csv")
-benthic = read.csv("data/marine proxies/benthic_d18O.csv")
+boron = read.csv("data/co2_compilation/boron_CO2.csv") %>%
+  rename(age = Age)
+ice_core = read.csv("data/co2_compilation/ice_core_co2.csv") %>%
+  rename(CO2 = co2)
+blue_ice = read.csv("data/co2_compilation/blue.ice.csv") %>%
+  rename(age = Age)
+benthic = read.csv("data/marine proxies/benthic_d18O.csv") %>%
+  rename(age = Age)
 bwt = read.csv("data/marine proxies/BWT607.csv")
 wpwp.sst = read.csv("data/marine proxies/1143Li.csv")
 
 # divide glacials and interglacials ----
-paleosol_g = paleosol_g %>% mutate(age = age/1000)
-boron_g = filter_g(boron, "Age")
+## age unit: kyr
+boron_g = filter_g(boron, "age")
 ice_core_g = filter_g(ice_core, "age")
-names(ice_core_g) = c("age", "CO2", "method")
-blue_ice_g = blue_ice %>% filter(period == "G") %>% mutate(age = Age/1000)
+blue_ice_g = blue_ice %>% filter(period == "G")
 # denote methods
 paleosol_g$method = "paleosol"
 boron_g$method = "boron"
-blue_ice_g$method = "ice"
-co2_g = rbind(paleosol_g[,c("age", "CO2", "method")], 
-              boron_g[, c("age", "CO2", "method")], 
-              ice_core_g, blue_ice_g[, c("age", "CO2", "method")])
-gmst$Age = gmst$age*1000
-gmst_g = filter_g(gmst, "Age")
-benthic_g = filter_g(benthic, "Age")
+ice_core_g$method = "ice_core"
+blue_ice_g$method = "blue_ice"
+co2_g = bind_rows(paleosol_g, boron_g, ice_core_g, blue_ice_g) %>% 
+  select(age, CO2, method)
+gmst$age = gmst$age*1000
+gmst_g = filter_g(gmst, "age")
+benthic_g = filter_g(benthic, "age")
 bwt_g = filter_g(bwt, "age")
 wpwp.sst_g = filter_g(wpwp.sst, "age")
 
-paleosol_ig = paleosol_ig %>% mutate(age = age/1000)
-boron_ig = filter_ig(boron, "Age")
+boron_ig = filter_ig(boron, "age")
 ice_core_ig = filter_ig(ice_core, "age")
-names(ice_core_ig) = c("age", "CO2", "method")
-blue_ice_ig = blue_ice %>% filter(period == "IG") %>% mutate(age = Age/1000)
+blue_ice_ig = blue_ice %>% filter(period == "IG")
 # denote methods
 paleosol_ig$method = "paleosol"
 boron_ig$method = "boron"
-blue_ice_ig$method = "ice"
-co2_ig = rbind(paleosol_ig, boron_ig[, c("age", "CO2", "method")], 
-              ice_core_ig, blue_ice_ig[, c("age", "CO2", "method")])
-gmst_ig = filter_ig(gmst, "Age")
-benthic_ig = filter_ig(benthic, "Age")
+ice_core_ig$method = "ice_core"
+blue_ice_ig$method = "blue_ice"
+co2_ig = bind_rows(paleosol_ig, boron_ig, ice_core_ig, blue_ice_ig) %>% 
+  select(age, CO2, method)
+gmst_ig = filter_ig(gmst, "age")
+benthic_ig = filter_ig(benthic, "age")
 bwt_ig = filter_ig(bwt, "age")
 wpwp.sst_ig = filter_ig(wpwp.sst, "age")
 
 # binning ----
-interval = 0.3
-age_max = 2.7
+interval = 300
+age_max = 2700
 co2_g = co2_g %>%
   mutate(time = assign_time_group(age, interval, age_max))
 gmst_g = gmst_g %>%
@@ -92,6 +94,11 @@ bwt_ig = bwt_ig %>%
   mutate(time = assign_time_group(age, interval, age_max))
 wpwp.sst_ig = wpwp.sst_ig %>%
   mutate(time = assign_time_group(age, interval, age_max))
+
+# # plot glacial vs interglacial records
+# ggplot() +
+#   geom_line(data = wpwp.sst_g, aes(x = age, y = SST), color = "blue") +
+#   geom_line(data = wpwp.sst_ig, aes(x = age, y = SST), color = "red")
 
 # output data
 co2_g$period = "glacial"
