@@ -3,7 +3,7 @@ library(ggpubr)
 library(effsize)
 source('plot/functions.R')
 set.seed(42)
-nsyth = 50000
+nsyth = 1e5
 theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
               axis.text.y = element_text(margin = margin(r = 0.1, unit = "cm")),
               axis.ticks.length=unit(0.15, "cm"),

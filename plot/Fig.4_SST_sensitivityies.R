@@ -4,7 +4,7 @@ library(readxl)
 library(effsize)
 source('plot/functions.R')
 set.seed(42)
-nsyth = 50000
+nsyth = 1e5
 theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
               axis.text.y = element_text(margin = margin(r = 0.1, unit = "cm")),
               axis.ticks.length=unit(0.15, "cm"),
@@ -158,7 +158,7 @@ p1 = ggplot(pdf_882_clean) +
   annotate("text", label = "882", x = 7.5, y = 0.4) +
   annotate("text", label = round(median(pdf_882_clean$interglacial), 2), x = 7.5, y = 0.3, color = pal[2]) +
   annotate("text", label = round(median(pdf_882_clean$glacial), 2), x = 7.5, y = 0.25, color = pal[1]) +
-  annotate("text", label = paste("d =", round(cohen.d(pdf_882_clean$glacial, pdf_882_clean$interglacial)$estimate, 2)), 
+  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_882_clean$glacial, pdf_882_clean$interglacial)$estimate, 2))), 
            x = 7.5, y = 0.2)
 
 pdf_1208_clean = pdf_1208 %>% 
