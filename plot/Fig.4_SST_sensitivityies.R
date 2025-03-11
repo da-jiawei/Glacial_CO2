@@ -4,7 +4,7 @@ library(readxl)
 library(effsize)
 source('plot/functions.R')
 set.seed(42)
-nsyth = 20000
+nsyth = 50000
 theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
               axis.text.y = element_text(margin = margin(r = 0.1, unit = "cm")),
               axis.ticks.length=unit(0.15, "cm"),
@@ -85,7 +85,7 @@ plot_g = function(dat){
     theme_bw() + theme +
     scale_x_continuous(limits = c(xmin, xmax)) +
     scale_y_continuous(limits = c(ymin, ymax)) +
-    labs(x = expression(Delta*"F"[CO2+LI]*" (W m"^"-2"*")"),
+    labs(x = expression(Delta*"F"*" (W m"^"-2"*")"),
          y = expression(paste("SST (", degree, "C)")))
 }
 p1 = plot_g(slope_882)
@@ -117,13 +117,14 @@ slope_pdf = function(dat) {
       subsample$sst.ig[p] = rnorm(1, mean = df_ig$sst[p], sd = df_ig$sst.sd[p])
     }
     m1 = lm(sst.g ~ r.g, subsample)
-    # slope$glacial[i] = ifelse(summary(m1)$coefficients[2, "Pr(>|t|)"] < 0.05,
-    #                           m1$coefficients[2], NA)
-    slope$glacial[i] = m1$coefficients[2]
+    slope$glacial[i] = ifelse(summary(m1)$coefficients[2, "Pr(>|t|)"] < 0.05,
+                              m1$coefficients[2], NA)
+    # slope$glacial[i] = m1$coefficients[2]
+    
     m2 = lm(sst.ig ~ r.ig, subsample)
-    # slope$interglacial[i] = ifelse(summary(m2)$coefficients[2, "Pr(>|t|)"] < 0.05,
-    #                                m2$coefficients[2], NA)
-    slope$interglacial[i] = m2$coefficients[2]
+    slope$interglacial[i] = ifelse(summary(m2)$coefficients[2, "Pr(>|t|)"] < 0.05,
+                                   m2$coefficients[2], NA)
+    # slope$interglacial[i] = m2$coefficients[2]
   }
   return(slope)
 }
@@ -141,149 +142,176 @@ pdf_bwt = slope_pdf(slope_bwt)
 
 # plot ---
 pal = c("#2171B5", "#D94801")
-t.test(pdf_882$glacial, pdf_882$interglacial)
-cohen.d(pdf_882$glacial, pdf_882$interglacial)
-p1 = ggplot(pdf_882) +
+pdf_882_clean = pdf_882 %>% 
+  filter(!is.na(glacial) & !is.na(interglacial)) %>%
+  filter(interglacial >= 0 & glacial >= 0)
+cohen.d(pdf_882_clean$glacial, pdf_882_clean$interglacial)
+p1 = ggplot(pdf_882_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(pdf_882$glacial, na.rm = TRUE), color = pal[1], size = 1, linetype = "dashed") +
-  geom_vline(xintercept = median(pdf_882$interglacial, na.rm = TRUE), color = pal[2], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_882_clean$glacial), color = pal[1], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_882_clean$interglacial), color = pal[2], size = 1, linetype = "dashed") +
   theme_bw() + theme +
   labs(x = "slope") +
   labs(y = "density") +
-  scale_x_continuous(limits = c(-10, 10)) +
-  annotate("text", label = "882", x = 7.5, y = 0.3) +
-  annotate("text", label = round(median(pdf_882$interglacial, na.rm = TRUE), 2), x = -5, y = 0.3, color = pal[2]) +
-  annotate("text", label = round(median(pdf_882$glacial, na.rm = TRUE), 2), x = -5, y = 0.25, color = pal[1]) +
-  annotate("text", label = paste("d =", round(cohen.d(pdf_882$glacial, pdf_882$interglacial)$estimate, 2)), x = -5, y = 0.2)
+  scale_x_continuous(limits = c(0, 10)) +
+  annotate("text", label = "882", x = 7.5, y = 0.4) +
+  annotate("text", label = round(median(pdf_882_clean$interglacial), 2), x = 7.5, y = 0.3, color = pal[2]) +
+  annotate("text", label = round(median(pdf_882_clean$glacial), 2), x = 7.5, y = 0.25, color = pal[1]) +
+  annotate("text", label = paste("d =", round(cohen.d(pdf_882_clean$glacial, pdf_882_clean$interglacial)$estimate, 2)), 
+           x = 7.5, y = 0.2)
 
-t.test(pdf_1208$glacial, pdf_1208$interglacial)
-cohen.d(pdf_1208$glacial, pdf_1208$interglacial)
-p2 = ggplot(pdf_1208) +
+pdf_1208_clean = pdf_1208 %>% 
+  filter(!is.na(glacial) & !is.na(interglacial)) %>%
+  filter(interglacial >= 0 & glacial >= 0)
+cohen.d(pdf_1208_clean$glacial, pdf_1208_clean$interglacial)
+p2 = ggplot(pdf_1208_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(pdf_1208$glacial, na.rm = TRUE), color = pal[1], size = 1, linetype = "dashed") +
-  geom_vline(xintercept = median(pdf_1208$interglacial, na.rm = TRUE), color = pal[2], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_1208_clean$glacial), color = pal[1], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_1208_clean$interglacial), color = pal[2], size = 1, linetype = "dashed") +
   theme_bw() + theme +
   labs(x = "slope") +
   labs(y = "density") +
-  scale_x_continuous(limits = c(-3, 5)) +
-  annotate("text", label = "1208", x = 3, y = 0.5) +
-  annotate("text", label = round(median(pdf_1208$interglacial, na.rm = TRUE), 2), x = -2, y = 0.5, color = pal[2]) +
-  annotate("text", label = round(median(pdf_1208$glacial, na.rm = TRUE), 2), x = -2, y = 0.4, color = pal[1]) +
-  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_1208$glacial, pdf_1208$interglacial)$estimate, 2))), x = -2, y = 0.3)
+  scale_x_continuous(limits = c(0, 6)) +
+  annotate("text", label = "1208", x = 5, y = 0.8) +
+  annotate("text", label = round(median(pdf_1208_clean$interglacial), 2), x = 5, y = 0.5, color = pal[2]) +
+  annotate("text", label = round(median(pdf_1208_clean$glacial), 2), x = 5, y = 0.4, color = pal[1]) +
+  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_1208_clean$glacial, pdf_1208_clean$interglacial)$estimate, 2))), 
+           x = 5, y = 0.3)
 
-t.test(pdf_1090$glacial, pdf_1090$interglacial)
-cohen.d(pdf_1090$glacial, pdf_1090$interglacial)
-p3 = ggplot(pdf_1090) +
+pdf_1090_clean = pdf_1090 %>% 
+  filter(!is.na(glacial) & !is.na(interglacial)) %>%
+  filter(interglacial >= 0 & glacial >= 0)
+cohen.d(pdf_1090_clean$glacial, pdf_1090_clean$interglacial)
+p3 = ggplot(pdf_1090_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(pdf_1090$glacial, na.rm = TRUE), color = pal[1], size = 1, linetype = "dashed") +
-  geom_vline(xintercept = median(pdf_1090$interglacial, na.rm = TRUE), color = pal[2], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_1090_clean$glacial), color = pal[1], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_1090_clean$interglacial), color = pal[2], size = 1, linetype = "dashed") +
   theme_bw() + theme +
   labs(x = "slope") +
   labs(y = "density") +
-  scale_x_continuous(limits = c(-3, 5)) +
-  annotate("text", label = "1208", x = 3, y = 0.6) +
-  annotate("text", label = round(median(pdf_1090$interglacial, na.rm = TRUE), 2), x = -2, y = 0.5, color = pal[2]) +
-  annotate("text", label = round(median(pdf_1090$glacial, na.rm = TRUE), 2), x = -2, y = 0.4, color = pal[1]) +
-  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_1090$glacial, pdf_1090$interglacial)$estimate, 2))), x = -2, y = 0.3)
+  scale_x_continuous(limits = c(0, 6)) +
+  annotate("text", label = "1090", x = 5, y = 0.8) +
+  annotate("text", label = round(median(pdf_1090_clean$interglacial), 2), x = 5, y = 0.5, color = pal[2]) +
+  annotate("text", label = round(median(pdf_1090_clean$glacial), 2), x = 5, y = 0.4, color = pal[1]) +
+  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_1090_clean$glacial, pdf_1090_clean$interglacial)$estimate, 2))), 
+           x = 5, y = 0.3)
 
-t.test(pdf_722$glacial, pdf_722$interglacial)
-cohen.d(pdf_722$glacial, pdf_722$interglacial)
-p4 = ggplot(pdf_722) +
+pdf_722_clean = pdf_722 %>% 
+  filter(!is.na(glacial) & !is.na(interglacial)) %>%
+  filter(interglacial >= 0 & glacial >= 0)
+cohen.d(pdf_722_clean$glacial, pdf_722_clean$interglacial)
+p4 = ggplot(pdf_722_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(pdf_722$glacial, na.rm = TRUE), color = pal[1], size = 1, linetype = "dashed") +
-  geom_vline(xintercept = median(pdf_722$interglacial, na.rm = TRUE), color = pal[2], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_722_clean$glacial), color = pal[1], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_722_clean$interglacial), color = pal[2], size = 1, linetype = "dashed") +
   theme_bw() + theme +
   labs(x = "slope") +
   labs(y = "density") +
-  scale_x_continuous(limits = c(-3, 4)) +
-  annotate("text", label = "722", x = 3, y = 0.7) +
-  annotate("text", label = round(median(pdf_722$interglacial, na.rm = TRUE), 2), x = -2, y = 0.7, color = pal[2]) +
-  annotate("text", label = round(median(pdf_722$glacial, na.rm = TRUE), 2), x = -2, y = 0.6, color = pal[1]) +
-  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_722$glacial, pdf_722$interglacial)$estimate, 2))), x = -2, y = 0.5)
+  scale_x_continuous(limits = c(0, 4)) +
+  annotate("text", label = "722", x = 3, y = 1) +
+  annotate("text", label = round(median(pdf_722_clean$interglacial), 2), x = 3, y = 0.7, color = pal[2]) +
+  annotate("text", label = round(median(pdf_722_clean$glacial), 2), x = 3, y = 0.6, color = pal[1]) +
+  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_722_clean$glacial, pdf_722_clean$interglacial)$estimate, 2))), 
+           x = 3, y = 0.5)
 
-t.test(pdf_1012$glacial, pdf_1012$interglacial)
-cohen.d(pdf_1012$glacial, pdf_1012$interglacial)
-p5 = ggplot(pdf_1012) +
+pdf_1012_clean = pdf_1012 %>% 
+  filter(!is.na(glacial) & !is.na(interglacial)) %>%
+  filter(interglacial >= 0 & glacial >= 0)
+cohen.d(pdf_1012_clean$glacial, pdf_1012_clean$interglacial)
+p5 = ggplot(pdf_1012_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(pdf_1012$glacial, na.rm = TRUE), color = pal[1], size = 1, linetype = "dashed") +
-  geom_vline(xintercept = median(pdf_1012$interglacial, na.rm = TRUE), color = pal[2], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_1012_clean$glacial), color = pal[1], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_1012_clean$interglacial), color = pal[2], size = 1, linetype = "dashed") +
   theme_bw() + theme +
   labs(x = "slope") +
   labs(y = "density") +
-  scale_x_continuous(limits = c(-4, 5)) +
-  annotate("text", label = "1012", x = 4, y = 0.5) +
-  annotate("text", label = round(median(pdf_1012$interglacial, na.rm = TRUE), 2), x = -3, y = 0.5, color = pal[2]) +
-  annotate("text", label = round(median(pdf_1012$glacial, na.rm = TRUE), 2), x = -3, y = 0.4, color = pal[1]) +
-  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_722$glacial, pdf_722$interglacial)$estimate, 2))), x = -3, y = 0.3)
+  scale_x_continuous(limits = c(0, 6)) +
+  annotate("text", label = "1012", x = 5, y = 0.7) +
+  annotate("text", label = round(median(pdf_1012_clean$interglacial), 2), x = 5, y = 0.5, color = pal[2]) +
+  annotate("text", label = round(median(pdf_1012_clean$glacial), 2), x = 5, y = 0.4, color = pal[1]) +
+  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_1012_clean$glacial, pdf_1012_clean$interglacial)$estimate, 2))), 
+           x = 5, y = 0.3)
 
-t.test(pdf_846$glacial, pdf_846$interglacial)
-cohen.d(pdf_846$glacial, pdf_846$interglacial)
-p6 = ggplot(pdf_846) +
+pdf_846_clean = pdf_846 %>% 
+  filter(!is.na(glacial) & !is.na(interglacial)) %>%
+  filter(interglacial >= 0 & glacial >= 0)
+cohen.d(pdf_846_clean$glacial, pdf_846_clean$interglacial)
+p6 = ggplot(pdf_846_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(pdf_846$glacial, na.rm = TRUE), color = pal[1], size = 1, linetype = "dashed") +
-  geom_vline(xintercept = median(pdf_846$interglacial, na.rm = TRUE), color = pal[2], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_846_clean$glacial), color = pal[1], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_846_clean$interglacial), color = pal[2], size = 1, linetype = "dashed") +
   theme_bw() + theme +
   labs(x = "slope") +
   labs(y = "density") +
-  scale_x_continuous(limits = c(-2, 4)) +
-  annotate("text", label = "846", x = 3, y = 0.8) +
-  annotate("text", label = round(median(pdf_846$interglacial, na.rm = TRUE), 2), x = -1, y = 0.8, color = pal[2]) +
-  annotate("text", label = round(median(pdf_846$glacial, na.rm = TRUE), 2), x = -1, y = 0.7, color = pal[1]) +
-  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_846$glacial, pdf_846$interglacial)$estimate, 2))), x = -1, y = 0.6)
+  scale_x_continuous(limits = c(0, 5)) +
+  annotate("text", label = "846", x = 4, y = 1.2) +
+  annotate("text", label = round(median(pdf_846_clean$interglacial), 2), x = 4, y = 0.8, color = pal[2]) +
+  annotate("text", label = round(median(pdf_846_clean$glacial), 2), x = 4, y = 0.7, color = pal[1]) +
+  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_846_clean$glacial, pdf_846_clean$interglacial)$estimate, 2))), 
+           x = 4, y = 0.6)
 
-t.test(pdf_1143$glacial, pdf_1143$interglacial)
-cohen.d(pdf_1143$glacial, pdf_1143$interglacial)
-p7 = ggplot(pdf_1143) +
+pdf_1143_clean = pdf_1143 %>% 
+  filter(!is.na(glacial) & !is.na(interglacial)) %>%
+  filter(interglacial >= 0 & glacial >= 0)
+cohen.d(pdf_1143_clean$glacial, pdf_1143_clean$interglacial)
+p7 = ggplot(pdf_1143_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(pdf_1143$glacial, na.rm = TRUE), color = pal[1], size = 1, linetype = "dashed") +
-  geom_vline(xintercept = median(pdf_1143$interglacial, na.rm = TRUE), color = pal[2], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_1143_clean$glacial), color = pal[1], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_1143_clean$interglacial), color = pal[2], size = 1, linetype = "dashed") +
   theme_bw() + theme +
   labs(x = "slope") +
   labs(y = "density") +
-  scale_x_continuous(limits = c(-2, 3)) +
-  annotate("text", label = "1143", x = 2, y = 0.8) +
-  annotate("text", label = round(median(pdf_1143$interglacial, na.rm = TRUE), 2), x = -1, y = 0.8, color = pal[2]) +
-  annotate("text", label = round(median(pdf_1143$glacial, na.rm = TRUE), 2), x = -1, y = 0.7, color = pal[1]) +
-  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_1143$glacial, pdf_1143$interglacial)$estimate, 2))), x = -1, y = 0.6)
+  scale_x_continuous(limits = c(0, 4)) +
+  annotate("text", label = "1143", x = 3, y = 1) +
+  annotate("text", label = round(median(pdf_1143_clean$interglacial), 2), x = 3, y = 0.8, color = pal[2]) +
+  annotate("text", label = round(median(pdf_1143_clean$glacial), 2), x = 3, y = 0.7, color = pal[1]) +
+  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_1143_clean$glacial, pdf_1143_clean$interglacial)$estimate, 2))), 
+           x = 3, y = 0.6)
 
-t.test(pdf_1148$glacial, pdf_1148$interglacial)
-cohen.d(pdf_1148$glacial, pdf_1148$interglacial)
-p8 = ggplot(pdf_1148) +
+pdf_1148_clean = pdf_1148 %>% 
+  filter(!is.na(glacial) & !is.na(interglacial)) %>%
+  filter(interglacial >= 0 & glacial >= 0)
+cohen.d(pdf_1148_clean$glacial, pdf_1148_clean$interglacial)
+p8 = ggplot(pdf_1148_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(pdf_1148$glacial, na.rm = TRUE), color = pal[1], size = 1, linetype = "dashed") +
-  geom_vline(xintercept = median(pdf_1148$interglacial, na.rm = TRUE), color = pal[2], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_1148_clean$glacial), color = pal[1], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_1148_clean$interglacial), color = pal[2], size = 1, linetype = "dashed") +
   theme_bw() + theme +
   labs(x = "slope") +
   labs(y = "density") +
-  scale_x_continuous(limits = c(-3, 5)) +
-  annotate("text", label = "1148", x = 3, y = 0.6) +
-  annotate("text", label = round(median(pdf_1148$interglacial, na.rm = TRUE), 2), x = -1, y = 0.6, color = pal[2]) +
-  annotate("text", label = round(median(pdf_1148$glacial, na.rm = TRUE), 2), x = -1, y = 0.5, color = pal[1]) +
-  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_1148$glacial, pdf_1148$interglacial)$estimate, 2))), x = -1, y = 0.4)
+  scale_x_continuous(limits = c(0, 5)) +
+  annotate("text", label = "1148", x = 4, y = 0.7) +
+  annotate("text", label = round(median(pdf_1148_clean$interglacial), 2), x = 4, y = 0.6, color = pal[2]) +
+  annotate("text", label = round(median(pdf_1148_clean$glacial), 2), x = 4, y = 0.5, color = pal[1]) +
+  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_1148_clean$glacial, pdf_1148_clean$interglacial)$estimate, 2))), 
+           x = 4, y = 0.4)
 
-t.test(pdf_bwt$glacial, pdf_bwt$interglacial)
-cohen.d(pdf_bwt$glacial, pdf_bwt$interglacial)
-p9 = ggplot(pdf_bwt) +
+pdf_bwt_clean = pdf_bwt %>% 
+  filter(!is.na(glacial) & !is.na(interglacial)) %>%
+  filter(interglacial >= 0 & glacial >= 0)
+cohen.d(pdf_bwt_clean$glacial, pdf_bwt_clean$interglacial)
+p9 = ggplot(pdf_bwt_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
-  geom_vline(xintercept = median(pdf_bwt$glacial, na.rm = TRUE), color = pal[1], size = 1, linetype = "dashed") +
-  geom_vline(xintercept = median(pdf_bwt$interglacial, na.rm = TRUE), color = pal[2], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_bwt_clean$glacial), color = pal[1], size = 1, linetype = "dashed") +
+  geom_vline(xintercept = median(pdf_bwt_clean$interglacial), color = pal[2], size = 1, linetype = "dashed") +
   theme_bw() + theme +
   labs(x = "slope") +
   labs(y = "density") +
-  scale_x_continuous(limits = c(-2, 3)) +
-  annotate("text", label = "BWT", x = 2, y = 0.9) +
-  annotate("text", label = round(median(pdf_bwt$interglacial, na.rm = TRUE), 2), x = -1, y = 0.9, color = pal[2]) +
-  annotate("text", label = round(median(pdf_bwt$glacial, na.rm = TRUE), 2), x = -1, y = 0.8, color = pal[1]) +
-  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_bwt$glacial, pdf_bwt$interglacial)$estimate, 2))), x = -1, y = 0.7)
+  scale_x_continuous(limits = c(0, 4)) +
+  annotate("text", label = "BWT", x = 3, y = 1) +
+  annotate("text", label = round(median(pdf_bwt_clean$interglacial), 2), x = 3, y = 0.9, color = pal[2]) +
+  annotate("text", label = round(median(pdf_bwt_clean$glacial), 2), x = 3, y = 0.8, color = pal[1]) +
+  annotate("text", label = paste("d =", abs(round(cohen.d(pdf_bwt_clean$glacial, pdf_bwt_clean$interglacial)$estimate, 2))), 
+           x = 3, y = 0.7)
 
 ggarrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, nrow = 3, ncol = 3, align = "hv",
         labels = c("a", "b", "c", "d", "e", "f", "g", "h", "i"))

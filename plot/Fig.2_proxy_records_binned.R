@@ -242,4 +242,32 @@ p8 = ggplot(co2_ig, aes(x = time, y = CO2)) +
 ggarrange(p1,p5,p2,p6,p3,p7,p4,p8,
           nrow = 4, ncol = 2, align = "hv",
           labels = c("a", "b", "c", "d", "e", "f", "g", "h"))
-ggsave("figures/Fig_2_time_series_proxy_data_boxplot.jpg", width = 6.7, height = 9.7)
+# ggarrange(p1,p5,p4,p8, nrow = 2, ncol = 2, align = "hv")
+ggsave("figures/Fig_2_time_series_proxy_data_boxplot_500ky.pdf", width = 6.7, height = 9.7)
+
+# GMST 
+min_values = aggregate(GMST ~ time, gmst_g, min)
+max_values = aggregate(GMST ~ time, gmst_g, max)
+ggplot(gmst_g, aes(x = time, y = GMST)) +
+  geom_violin(color = "lightblue") +
+  geom_jitter(width = 0.1, color = "lightblue") +
+  stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "navy") +
+  geom_line(data = min_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
+  geom_line(data = max_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
+  scale_fill_viridis_d() +
+  theme_bw() + theme + theme(legend.position = "none") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  labs(x = "", y = expression(paste("GMST (", degree, "C)")))
+
+min_values = aggregate(GMST ~ time, gmst_ig, min)
+max_values = aggregate(GMST ~ time, gmst_ig, max)
+ggplot(gmst_ig, aes(x = time, y = GMST)) +
+  geom_violin(color = "lightsalmon") +
+  geom_jitter(width = 0.1, color = "lightsalmon") +
+  stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "firebrick") +
+  geom_line(data = min_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
+  geom_line(data = max_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
+  theme_bw() + theme + theme(legend.position = "none") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  # scale_y_continuous(limits = c(120, 450)) +
+  labs(x = "", y = expression(paste("GMST (", degree, "C)")))
