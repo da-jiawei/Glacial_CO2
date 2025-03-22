@@ -146,6 +146,7 @@ pdf_882_clean = pdf_882 %>%
   filter(!is.na(glacial) & !is.na(interglacial)) %>%
   filter(interglacial >= 0 & glacial >= 0)
 cohen.d(pdf_882_clean$glacial, pdf_882_clean$interglacial)
+t.test(pdf_882_clean$glacial, pdf_882_clean$interglacial)
 p1 = ggplot(pdf_882_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
@@ -165,6 +166,7 @@ pdf_1208_clean = pdf_1208 %>%
   filter(!is.na(glacial) & !is.na(interglacial)) %>%
   filter(interglacial >= 0 & glacial >= 0)
 cohen.d(pdf_1208_clean$glacial, pdf_1208_clean$interglacial)
+t.test(pdf_1208_clean$glacial, pdf_1208_clean$interglacial)
 p2 = ggplot(pdf_1208_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
@@ -184,6 +186,7 @@ pdf_1090_clean = pdf_1090 %>%
   filter(!is.na(glacial) & !is.na(interglacial)) %>%
   filter(interglacial >= 0 & glacial >= 0)
 cohen.d(pdf_1090_clean$glacial, pdf_1090_clean$interglacial)
+t.test(pdf_1090_clean$glacial, pdf_1090_clean$interglacial)
 p3 = ggplot(pdf_1090_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
@@ -203,6 +206,7 @@ pdf_722_clean = pdf_722 %>%
   filter(!is.na(glacial) & !is.na(interglacial)) %>%
   filter(interglacial >= 0 & glacial >= 0)
 cohen.d(pdf_722_clean$glacial, pdf_722_clean$interglacial)
+t.test(pdf_722_clean$glacial, pdf_722_clean$interglacial)
 p4 = ggplot(pdf_722_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
@@ -222,6 +226,7 @@ pdf_1012_clean = pdf_1012 %>%
   filter(!is.na(glacial) & !is.na(interglacial)) %>%
   filter(interglacial >= 0 & glacial >= 0)
 cohen.d(pdf_1012_clean$glacial, pdf_1012_clean$interglacial)
+t.test(pdf_1012_clean$glacial, pdf_1012_clean$interglacial)
 p5 = ggplot(pdf_1012_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
@@ -241,6 +246,7 @@ pdf_846_clean = pdf_846 %>%
   filter(!is.na(glacial) & !is.na(interglacial)) %>%
   filter(interglacial >= 0 & glacial >= 0)
 cohen.d(pdf_846_clean$glacial, pdf_846_clean$interglacial)
+t.test(pdf_846_clean$glacial, pdf_846_clean$interglacial)
 p6 = ggplot(pdf_846_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
@@ -260,6 +266,7 @@ pdf_1143_clean = pdf_1143 %>%
   filter(!is.na(glacial) & !is.na(interglacial)) %>%
   filter(interglacial >= 0 & glacial >= 0)
 cohen.d(pdf_1143_clean$glacial, pdf_1143_clean$interglacial)
+t.test(pdf_1143_clean$glacial, pdf_1143_clean$interglacial)
 p7 = ggplot(pdf_1143_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
@@ -279,6 +286,7 @@ pdf_1148_clean = pdf_1148 %>%
   filter(!is.na(glacial) & !is.na(interglacial)) %>%
   filter(interglacial >= 0 & glacial >= 0)
 cohen.d(pdf_1148_clean$glacial, pdf_1148_clean$interglacial)
+t.test(pdf_1148_clean$glacial, pdf_1148_clean$interglacial)
 p8 = ggplot(pdf_1148_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
@@ -298,6 +306,7 @@ pdf_bwt_clean = pdf_bwt %>%
   filter(!is.na(glacial) & !is.na(interglacial)) %>%
   filter(interglacial >= 0 & glacial >= 0)
 cohen.d(pdf_bwt_clean$glacial, pdf_bwt_clean$interglacial)
+t.test(pdf_bwt_clean$glacial, pdf_bwt_clean$interglacial)
 p9 = ggplot(pdf_bwt_clean) +
   geom_density(aes(x = glacial), color = pal[1], fill = pal[1], size = 1, alpha = 0.3) +
   geom_density(aes(x = interglacial), color = pal[2], fill = pal[2], size = 1, alpha = 0.2) +
