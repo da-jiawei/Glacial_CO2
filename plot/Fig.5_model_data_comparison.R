@@ -103,7 +103,13 @@ plot_dm = function(num){
     scale_x_continuous(limits = c(-3, 12)) +
     annotate("text", x = 0, y = max(longterm[[col_name]])-1, label = paste0("Site ", col_name))
 }
-p1 = plot_dm(882) 
+
+glacial = slope_bwt %>% filter(period == "glacial")
+interglacial = slope_bwt %>% filter(period == "interglacial")
+summary(lm(data = glacial, sst ~ r))
+summary(lm(data = interglacial, sst ~ r))
+
+p1 = plot_dm(882)
 p2 = plot_dm(1208) 
 p3 = plot_dm(1090)
 p4 = plot_dm(722)

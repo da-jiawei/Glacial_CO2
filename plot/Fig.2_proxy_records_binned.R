@@ -1,3 +1,4 @@
+rm(list = ls())
 library(tidyverse)
 library(ggpubr)
 library(readxl)
@@ -14,6 +15,7 @@ theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
               legend.title = element_text(size = 10),
               panel.grid.minor = element_blank(),
               panel.grid.major = element_blank())
+cat("\014")
 
 # read data ----
 # groom paleosol data
@@ -168,9 +170,22 @@ p3 = ggplot(wpwp.sst_g, aes(x = time, y = SST)) +
   scale_y_continuous(limits = c(24, 31)) +
   xlab("") + ylab("WPWP SST (°C)")
 
+min_values = aggregate(GMST ~ time, gmst_g, min)
+max_values = aggregate(GMST ~ time, gmst_g, max)
+p4 = ggplot(gmst_g, aes(x = time, y = GMST)) +
+  geom_violin(color = "lightblue") +
+  geom_jitter(width = 0.1, color = "lightblue") +
+  stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "navy") +
+  geom_line(data = min_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
+  geom_line(data = max_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
+  theme_bw() + theme + theme(legend.position = "none") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  scale_y_continuous(limits = c(-8, 3)) +
+  labs(x = "", y = expression(paste("GMST (", degree, "C)")))
+
 min_values = aggregate(CO2 ~ time, co2_g, min)
 max_values = aggregate(CO2 ~ time, co2_g, max)
-p4 = ggplot(co2_g, aes(x = time, y = CO2)) +
+p5 = ggplot(co2_g, aes(x = time, y = CO2)) +
   geom_violin(color = "lightblue") +
   geom_jitter(width = 0.1, color = "lightblue") +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "navy") +
@@ -181,12 +196,13 @@ p4 = ggplot(co2_g, aes(x = time, y = CO2)) +
   scale_y_continuous(limits = c(120, 450)) +
   xlab("") + ylab(expression("CO"[2]*" (ppm)"))
 
+# interglacials
 df_filtered = benthic_ig %>%
   filter(d18O > quantile(benthic_ig$d18O, 0.25) - 1.5*IQR(benthic_ig$d18O) & 
            d18O < quantile(benthic_ig$d18O, 0.75) + 1.5*IQR(benthic_ig$d18O))
 min_values = aggregate(d18O ~ time, df_filtered, min)
 max_values = aggregate(d18O ~ time, df_filtered, max)
-p5 = ggplot(benthic_ig, aes(x = time, y = d18O)) +
+p6 = ggplot(benthic_ig, aes(x = time, y = d18O)) +
   geom_violin(color = "lightsalmon") +
   geom_jitter(width = 0.1, color = "lightsalmon") +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "firebrick") +
@@ -200,7 +216,7 @@ p5 = ggplot(benthic_ig, aes(x = time, y = d18O)) +
 
 min_values = aggregate(BWT ~ time, bwt_ig, min)
 max_values = aggregate(BWT ~ time, bwt_ig, max)
-p6 = ggplot(bwt_ig, aes(x = time, y = BWT)) +
+p7 = ggplot(bwt_ig, aes(x = time, y = BWT)) +
   geom_violin(color = "lightsalmon") +
   geom_jitter(width = 0.1, color = "lightsalmon") +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "firebrick") +
@@ -214,7 +230,7 @@ p6 = ggplot(bwt_ig, aes(x = time, y = BWT)) +
 
 min_values = aggregate(SST ~ time, wpwp.sst_ig, min)
 max_values = aggregate(SST ~ time, wpwp.sst_ig, max)
-p7 = ggplot(wpwp.sst_ig, aes(x = time, y = SST)) +
+p8 = ggplot(wpwp.sst_ig, aes(x = time, y = SST)) +
   geom_violin(color = "lightsalmon", width = 1) +
   geom_jitter(width = 0.1, color = "lightsalmon") +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "firebrick") +
@@ -226,9 +242,22 @@ p7 = ggplot(wpwp.sst_ig, aes(x = time, y = SST)) +
   scale_y_continuous(limits = c(24, 31)) +
   xlab("") + ylab("WPWP SST (°C)")
 
+min_values = aggregate(GMST ~ time, gmst_ig, min)
+max_values = aggregate(GMST ~ time, gmst_ig, max)
+p9 = ggplot(gmst_ig, aes(x = time, y = GMST)) +
+  geom_violin(color = "lightsalmon") +
+  geom_jitter(width = 0.1, color = "lightsalmon") +
+  stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "firebrick") +
+  geom_line(data = min_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
+  geom_line(data = max_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
+  theme_bw() + theme + theme(legend.position = "none") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  scale_y_continuous(limits = c(-8, 3)) +
+  labs(x = "", y = expression(paste("GMST (", degree, "C)")))
+
 min_values = aggregate(CO2 ~ time, co2_ig, min)
 max_values = aggregate(CO2 ~ time, co2_ig, max)
-p8 = ggplot(co2_ig, aes(x = time, y = CO2)) +
+p10 = ggplot(co2_ig, aes(x = time, y = CO2)) +
   geom_violin(color = "lightsalmon") +
   geom_jitter(width = 0.1, color = "lightsalmon") +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "firebrick") +
@@ -239,35 +268,9 @@ p8 = ggplot(co2_ig, aes(x = time, y = CO2)) +
   scale_y_continuous(limits = c(120, 450)) +
   xlab("") + ylab(expression("CO"[2]*" (ppm)"))
 
-ggarrange(p1,p5,p2,p6,p3,p7,p4,p8,
-          nrow = 4, ncol = 2, align = "hv",
-          labels = c("a", "b", "c", "d", "e", "f", "g", "h"))
+ggarrange(p1,p6,p2,p7,p3,p8,p4,p9,p5,p10,
+          nrow = 5, ncol = 2, align = "hv",
+          labels = c("a", "b", "c", "d", "e", "f", "g", "h", "i", "j"))
 # ggarrange(p1,p5,p4,p8, nrow = 2, ncol = 2, align = "hv")
-ggsave("figures/Fig_2_time_series_proxy_data_boxplot_500ky.pdf", width = 6.7, height = 9.7)
+ggsave("figures/Fig_2_time_series_proxy_data_boxplot_500ky.pdf", width = 6.7, height = 11)
 
-# GMST 
-min_values = aggregate(GMST ~ time, gmst_g, min)
-max_values = aggregate(GMST ~ time, gmst_g, max)
-ggplot(gmst_g, aes(x = time, y = GMST)) +
-  geom_violin(color = "lightblue") +
-  geom_jitter(width = 0.1, color = "lightblue") +
-  stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "navy") +
-  geom_line(data = min_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
-  geom_line(data = max_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
-  scale_fill_viridis_d() +
-  theme_bw() + theme + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
-  labs(x = "", y = expression(paste("GMST (", degree, "C)")))
-
-min_values = aggregate(GMST ~ time, gmst_ig, min)
-max_values = aggregate(GMST ~ time, gmst_ig, max)
-ggplot(gmst_ig, aes(x = time, y = GMST)) +
-  geom_violin(color = "lightsalmon") +
-  geom_jitter(width = 0.1, color = "lightsalmon") +
-  stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "firebrick") +
-  geom_line(data = min_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
-  geom_line(data = max_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
-  theme_bw() + theme + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
-  # scale_y_continuous(limits = c(120, 450)) +
-  labs(x = "", y = expression(paste("GMST (", degree, "C)")))
