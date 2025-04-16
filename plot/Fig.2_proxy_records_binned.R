@@ -28,7 +28,7 @@ paleosol_g = read_xlsx("data/Dataset S1.xlsx", sheet = 2)
 paleosol_g = paleosol_g[, c(4, 17)] %>% drop_na()
 names(paleosol_g) = c("age", "CO2")
 # other proxy data
-gmst = read.csv("data/GMST.csv")
+gmst = read.csv("data/GMST/clark_2024.csv")
 boron = read.csv("data/co2_compilation/boron_CO2.csv") %>%
   rename(age = Age)
 ice_core = read.csv("data/co2_compilation/ice_core_co2.csv") %>%
