@@ -1,7 +1,5 @@
 rm(list = ls())
-library(tidyverse)
-library(ggpubr)
-library(readxl)
+pacman::p_load(tidyverse, ggpubr, readxl)
 source('plot/functions.R')
 theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
               axis.text.y = element_text(margin = margin(r = 0.1, unit = "cm")),
@@ -39,6 +37,7 @@ benthic = read.csv("data/marine proxies/benthic_d18O.csv") %>%
   rename(age = Age)
 bwt = read.csv("data/marine proxies/BWT607.csv")
 wpwp.sst = read.csv("data/marine proxies/1143Li.csv")
+cat("\014")
 
 # divide glacials and interglacials ----
 ## age unit: kyr

@@ -18,78 +18,14 @@ theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
 
 # read data ----
 co2 = read.csv("output/binned_co2.csv")
-ice_co2 = co2 |> 
-  filter(method == "ice_core", age <= 800)
 proxy_co2 = co2 |> 
   filter(age > 800)
 gmst_clark = read.csv("data/GMST/clark_2024.csv") |>
   mutate(age = age * 1e3) |>
   filter(age <= 2600)
-gmst_stap = read_xlsx("data/GMST/stap_2018.xlsx") |>
-  mutate(age = age_ka) |>
-  filter(age <= 2600)
 R_LI = read.csv("data/R_LI_koehler2015.csv") |>
   mutate(age = Age) |> 
   filter(age <= 2600)
-
-# time-series plot ----
-pal = c("#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C")
-method = pal[factor(proxy_co2$method, levels = c("paleosol", "boron", "ice"))]
-
-png("figures/time_series_climate_sensitivity.png", 4, 5.5, units = "in", res = 300)
-par(mar = c(4, 4, 1, 4))
-graphics::plot(-0.3, 0, xlim = c(0, 2.7), ylim = c(0, 4), axes = FALSE,
-     xlab = "", ylab = "")
-
-# legend(x = 0, y = 4.1, legend = c("paleosol", "boron", "blue ice"),
-#        col = pal, pch = 16, cex = 0.4, pt.cex = 1)
-
-yext = range(gmst_stap$DGMST)
-tix = seq(floor(min(yext)), 
-          ceiling(max(yext)), by = 1)
-gmst.rs = cbind(gmst_stap$age / 1e3,
-                3 + (gmst_stap$DGMST - min(tix)) / diff(range(tix)))
-gmst.rs = gmst.rs[order(gmst.rs[, 1]), ]
-lines(gmst.rs[, 1], gmst.rs[, 2], col = pal[3], lwd = 1)
-axis(4, 3 + (tix - min(tix)) / diff(range(tix)), tix)
-mtext(expression(paste(Delta*"GMST (", degree,"C)")), 4, line = 2.5, at = 3.5)
-
-yext = range(gmst_clark$GMST)
-tix = seq(floor(min(yext)), 
-          ceiling(max(yext) + 1.2), by = 4)
-gmst.rs = cbind(gmst_clark$age / 1e3,
-                2 + (gmst_clark$GMST - min(tix)) / diff(range(tix)))
-gmst.rs = gmst.rs[order(gmst.rs[, 1]), ]
-lines(gmst.rs[, 1], gmst.rs[, 2], col = pal[1], lwd = 1)
-axis(2, 2 + (tix - min(tix)) / diff(range(tix)), tix)
-mtext(expression(paste(Delta*"GMST (", degree,"C)")), 2, line = 2.5, at = 2.5)
-
-yext = range(R_LI$RLI)
-tix = seq(floor(min(yext)), 
-          ceiling(max(yext)), by = 2)
-R_LI.rs = cbind(R_LI$age / 1e3,
-               1 + (R_LI$RLI - min(tix)) / diff(range(tix)))
-R_LI.rs = R_LI.rs[order(R_LI.rs[, 1]), ]
-lines(R_LI.rs[, 1], R_LI.rs[, 2], col = pal[5], lwd = 1)
-axis(4, 1 + (tix - min(tix)) / diff(range(tix)), tix)
-mtext(expression(Delta*"R"[LI]*" (W m"^"-2"*")"), 4, line = 2.5, at = 1.5)
-
-yext = range(co2$CO2)
-tix = seq(floor(min(yext)-39), 
-          ceiling(max(yext)+50), by = 100)
-ice.rs = cbind(ice_co2$age / 1e3,
-                0 + (ice_co2$CO2 - min(tix)) / diff(range(tix)))
-proxy.rs = cbind(proxy_co2$age / 1e3,
-                 0 + (proxy_co2$CO2 - min(tix)) / diff(range(tix)))
-ice.rs = ice.rs[order(ice.rs[, 1]), ]
-lines(ice.rs[, 1], ice.rs[, 2], col = "black", lwd = 1)
-points(proxy.rs[, 1], proxy.rs[, 2], col = "black", bg = method, pch = 21, cex = 1)
-axis(2, 0 + (tix - min(tix)) / diff(range(tix)), tix)
-mtext(expression("CO"[2]*" (ppmv)"), 2, line = 2.5, at = 0.5)
-
-axis(1)
-mtext("Age (Ma)", 1, line = 2)
-dev.off()
 
 # time window mean
 # calculating radiative forcing ----
@@ -114,7 +50,7 @@ RF = function(time_period){
     # calculate CO2 + ice sheet
     rli_s = Rli_sub |> filter(time == forcing_sub$time[i])
     rli_iter = sample(rli_s$RLI, nsyth, replace = TRUE)
-    r_co2_li = (r_co2 + rli_iter)
+    r_co2_li = r_co2 + rli_iter
     
     # a efficacy factor of 0.45 +0.34/-0.2 to correct for ice sheet forcing - Stap (2019)
     median_val = .45
@@ -125,17 +61,14 @@ RF = function(time_period){
     shape = (upper_sigma - lower_sigma) / scale
     eps_li = rsn(nsyth, xi = location, omega = scale, alpha = shape)
     rli_cal = rli_iter * eps_li
-    
-    # conversion factor of 0.64 +/-0.07 to account for other the influence of other long-term processes
-    theta = rnorm(nsyth, .64, .07)
-    r_total = theta * (r_co2 + rli_cal)
+    r_co2_li_cal = r_co2 + rli_cal
     
     forcing_sub$r_co2[i] = mean(r_co2)
     forcing_sub$r_co2.sd[i] = sd(r_co2)
     forcing_sub$r_co2_li[i] = mean(r_co2_li)
     forcing_sub$r_co2_li.sd[i] = sd(r_co2_li)
-    forcing_sub$r[i] = mean(r_total)
-    forcing_sub$r.sd[i] = sd(r_total)
+    forcing_sub$r_co2_li_cal[i] = mean(r_co2_li_cal)
+    forcing_sub$r_co2_li_cal.sd[i] = sd(r_co2_li_cal)
   }
   return(forcing_sub)
 }
@@ -191,19 +124,19 @@ plot = function(dat, forcing, forcing.sd, param, param.sd){
 
 summary(lm(data = dat_g, gmst_c ~ r_co2))
 summary(lm(data = dat_g, gmst_c ~ r_co2_li))
-summary(lm(data = dat_g, gmst_c ~ r))
+summary(lm(data = dat_g, gmst_c ~ r_co2_li_cal))
 
 p1 = plot(dat_g, "r_co2", "r_co2.sd", "gmst_c", "gmst_c.sd")
 p2 = plot(dat_g, "r_co2_li", "r_co2_li.sd", "gmst_c", "gmst_c.sd")
-p3 = plot(dat_g, "r", "r.sd", "gmst_c", "gmst_c.sd")
+p3 = plot(dat_g, "r_co2_li_cal", "r_co2_li_cal.sd", "gmst_c", "gmst_c.sd")
 
 summary(lm(data = dat_ig, gmst_c ~ r_co2))
 summary(lm(data = dat_ig, gmst_c ~ r_co2_li))
-summary(lm(data = dat_ig, gmst_c ~ r))
+summary(lm(data = dat_ig, gmst_c ~ r_co2_li_cal))
 
 p4 = plot(dat_ig, "r_co2", "r_co2.sd", "gmst_c", "gmst_c.sd")
 p5 = plot(dat_ig, "r_co2_li", "r_co2_li.sd", "gmst_c", "gmst_c.sd")
-p6 = plot(dat_ig, "r", "r.sd", "gmst_c", "gmst_c.sd")
+p6 = plot(dat_ig, "r_co2_li_cal", "r_co2_li_cal.sd", "gmst_c", "gmst_c.sd")
 
 ggarrange(p1,p2,p3,p4,p5,p6, nrow = 2, ncol = 3, align = "hv", common.legend = TRUE)
 ggsave("figures/Fig_3_climate_sensitivity.pdf", width = 7.5, height = 5.8)
@@ -220,20 +153,24 @@ slope_pdf = function(param, param.sd) {
 
   for (i in 1:nsyth) {
     subsample = data.frame(matrix(nrow = nrow(dat_g), ncol = 9))
-    names(subsample) = c("time", "r_co2.g", "r_co2_li.g", "r.g", "gmst.g", 
-                         "r_co2.ig", "r_co2_li.ig", "r.ig", "gmst.ig")
+    names(subsample) = c("time", "r_co2.g", "r_co2_li.g", "r_co2_li_cal.g", "gmst.g", 
+                         "r_co2.ig", "r_co2_li.ig", "r_co2_li_cal.ig", "gmst.ig")
     subsample$time = dat_g$time
     for (p in 1:nrow(subsample)) {
       subsample$r_co2.g[p] = rnorm(1, mean = dat_g$r_co2[p], sd = dat_g$r_co2.sd[p])
       subsample$r_co2_li.g[p] = rnorm(1, mean = dat_g$r_co2_li[p], sd = dat_g$r_co2_li.sd[p])
-      subsample$r.g[p] = rnorm(1, mean = dat_g$r[p], sd = dat_g$r.sd[p])
+      subsample$r_co2_li_cal.g[p] = rnorm(1, mean = dat_g$r_co2_li_cal[p], sd = dat_g$r_co2_li_cal.sd[p])
       subsample$gmst.g[p] = rnorm(1, mean = dat_g[[param]][p], sd = dat_g[[param.sd]][p])
       
       subsample$r_co2.ig[p] = rnorm(1, mean = dat_ig$r_co2[p], sd = dat_ig$r_co2.sd[p])
       subsample$r_co2_li.ig[p] = rnorm(1, mean = dat_ig$r_co2_li[p], sd = dat_ig$r_co2_li.sd[p])
-      subsample$r.ig[p] = rnorm(1, mean = dat_ig$r[p], sd = dat_ig$r.sd[p])
+      subsample$r_co2_li_cal.ig[p] = rnorm(1, mean = dat_ig$r_co2_li_cal[p], sd = dat_ig$r_co2_li_cal.sd[p])
       subsample$gmst.ig[p] = rnorm(1, mean = dat_ig[[param]][p], sd = dat_ig[[param.sd]][p])
     }
+    
+    # conversion factor of 0.64 +/-0.07 to account for other the influence of other long-term processes
+    phi = rnorm(1, .64, .07)
+    
     # glacials
     m1 = lm(gmst.g ~ r_co2.g, subsample)
     g_co2[i] = ifelse(summary(m1)$coefficients[2, "Pr(>|t|)"] < 0.05,
@@ -241,9 +178,9 @@ slope_pdf = function(param, param.sd) {
     m1 = lm(gmst.g ~ r_co2_li.g, subsample)
     g_co2_li[i] = ifelse(summary(m1)$coefficients[2, "Pr(>|t|)"] < 0.05,
                       m1$coefficients[2], NA)
-    m1 = lm(gmst.g ~ r.g, subsample)
+    m1 = lm(gmst.g ~ r_co2_li_cal.g, subsample)
     g_r[i] = ifelse(summary(m1)$coefficients[2, "Pr(>|t|)"] < 0.05,
-                              m1$coefficients[2], NA)
+                              m1$coefficients[2] * phi, NA)
     # interglacials
     m1 = lm(gmst.ig ~ r_co2.ig, subsample)
     ig_co2[i] = ifelse(summary(m1)$coefficients[2, "Pr(>|t|)"] < 0.05,
@@ -251,9 +188,9 @@ slope_pdf = function(param, param.sd) {
     m1 = lm(gmst.ig ~ r_co2_li.g, subsample)
     ig_co2_li[i] = ifelse(summary(m1)$coefficients[2, "Pr(>|t|)"] < 0.05,
                        m1$coefficients[2], NA)
-    m1 = lm(gmst.ig ~ r.ig, subsample)
+    m1 = lm(gmst.ig ~ r_co2_li_cal.ig, subsample)
     ig_r[i] = ifelse(summary(m1)$coefficients[2, "Pr(>|t|)"] < 0.05,
-                                   m1$coefficients[2], NA)
+                                   m1$coefficients[2] * phi, NA)
   }
   g_co2 = g_co2[g_co2 > 0 & !is.na(g_co2)]
   g_co2_li = g_co2_li[g_co2_li > 0 & !is.na(g_co2_li)]
@@ -294,15 +231,15 @@ plot_pdf = function(dat1, dat2, name, xmax, ymax) {
   return(p1)
 }
 
-t.test(slope_gmst_c[[1]], slope_gmst_c[[2]])
+t.test(slope_gmst_c[[5]], slope_gmst_c[[6]])
 cohen.d(slope_gmst_c[[1]], slope_gmst_c[[2]])
 
 p1 = plot_pdf(slope_gmst_c[[1]], slope_gmst_c[[2]], "R_CO2",6,0.84)
 p2 = plot_pdf(slope_gmst_c[[3]], slope_gmst_c[[4]], "R_CO2_LI",6,1.9)
-p3 = plot_pdf(slope_gmst_c[[5]], slope_gmst_c[[6]], "R_total",6,0.75)
+p3 = plot_pdf(slope_gmst_c[[5]], slope_gmst_c[[6]], "R_total",6,1.7)
 
 ggarrange(p1,p2,p3,nrow = 1, ncol = 3, align = "hv")
-ggsave("figures/Fig_3_climate_sensitivity_pdfs.pdf", width = 7.8, height = 3)
+ggsave("figures/Fig_3_climate_sensitivity_pdfs.pdf", width = 7.8, height = 3) 
 
 # fing the 95% confidence intervals
 cf_95 = function(slopes){
@@ -320,3 +257,6 @@ cf_95 = function(slopes){
 }
 cf_95(slope_gmst_c[[5]]) # glacial
 cf_95(slope_gmst_c[[6]]) # interglacial
+
+
+
