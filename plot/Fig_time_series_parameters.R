@@ -1,3 +1,4 @@
+rm(list = ls())
 dat = read.csv("output/glacial_co2_estimates.csv")
 dat = dat[, 2:ncol(dat)]
 pal = c("#A6CEE3", "#B2DF8A")
