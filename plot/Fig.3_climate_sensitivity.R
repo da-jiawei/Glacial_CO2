@@ -1,5 +1,6 @@
 rm(list = ls())
-pacman::p_load(tidyverse, ggpubr, effsize, sn, readxl)
+pacman::p_load(tidyverse, effsize, sn, readxl, patchwork, ggnewscale, showtext)
+showtext_auto()
 source('plot/functions.R')
 set.seed(42)
 nsyth = 1e5
@@ -7,14 +8,14 @@ theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
               axis.text.y = element_text(margin = margin(r = 0.1, unit = "cm")),
               axis.ticks.length=unit(0.15, "cm"),
               axis.ticks = element_line(colour = "black"),
-              text = element_text(color = "black", size = 10),
-              axis.title = element_text(size = 10), 
-              axis.text = element_text(size = 10),
+              text = element_text(color = "black", size = 10, family = "Arial"),
+              axis.title = element_text(size = 12),
+              axis.title.y = element_text(margin = margin(r = 0)),
+              axis.text = element_text(size = 10, color = "black"),
               plot.title = element_text(hjust = 0.1, vjust = -10),
               legend.text = element_text(size = 10),
               legend.title = element_text(size = 10),
-              panel.grid.minor = element_blank(),
-              panel.grid.major = element_blank())
+              panel.grid = element_blank())
 
 # read data ----
 co2 = read.csv("output/binned_co2.csv")
@@ -98,48 +99,125 @@ write.csv(dat_ig, "output/climate_sensitivity_interglacial.csv")
 dat_g = read.csv("output/climate_sensitivity_glacial.csv")
 dat_ig = read.csv("output/climate_sensitivity_interglacial.csv")
 pal = c("#2171B5", "#D94801")
-# plot lnCO2
-plot = function(dat, forcing, forcing.sd, param, param.sd){
-  if(deparse(substitute(dat)) == "dat_g"){
-    pal_s = pal[1]
-    num = 1
-  } else {
-    pal_s = pal[2]
-    num = 7
-  }
-  xmin = round(min(dat_g[[forcing]] - dat_g[[forcing.sd]])-0.1, 1)
-  xmax = round(max(dat_ig[[forcing]] + dat_ig[[forcing.sd]])+0.4, 1)
-  ymin = floor(min(dat_g[[param]] - dat_g[[param.sd]]))
-  ymax = ceiling(max(dat_ig[[param]] + dat_ig[[param.sd]]))
-  ggplot(dat, aes(x = .data[[forcing]], y = .data[[param]])) +
-    geom_smooth(method = "lm", formula = y ~ x, show.legend = F, span = 1, alpha = 0.1, linetype = "dashed", color = pal_s, fill = pal_s) +
-    geom_errorbar(aes(xmin = .data[[forcing]] - .data[[forcing.sd]], xmax = .data[[forcing]] + .data[[forcing.sd]]), width = 0, linewidth = 0.2) +
-    geom_errorbar(aes(ymin = .data[[param]] - .data[[param.sd]], ymax = .data[[param]] + .data[[param.sd]]), width = 0, linewidth = 0.2) +
-    geom_point(aes(fill = time), shape = 21, size = 3) +
-    scale_fill_brewer(palette = num) +
-    theme_bw() + theme +
-    scale_x_continuous(limits = c(xmin, xmax)) +
-    scale_y_continuous(limits = c(ymin, ymax))
-}
-
 summary(lm(data = dat_g, gmst_c ~ r_co2))
 summary(lm(data = dat_g, gmst_c ~ r_co2_li))
 summary(lm(data = dat_g, gmst_c ~ r_co2_li_cal))
-
-p1 = plot(dat_g, "r_co2", "r_co2.sd", "gmst_c", "gmst_c.sd")
-p2 = plot(dat_g, "r_co2_li", "r_co2_li.sd", "gmst_c", "gmst_c.sd")
-p3 = plot(dat_g, "r_co2_li_cal", "r_co2_li_cal.sd", "gmst_c", "gmst_c.sd")
-
 summary(lm(data = dat_ig, gmst_c ~ r_co2))
 summary(lm(data = dat_ig, gmst_c ~ r_co2_li))
 summary(lm(data = dat_ig, gmst_c ~ r_co2_li_cal))
 
-p4 = plot(dat_ig, "r_co2", "r_co2.sd", "gmst_c", "gmst_c.sd")
-p5 = plot(dat_ig, "r_co2_li", "r_co2_li.sd", "gmst_c", "gmst_c.sd")
-p6 = plot(dat_ig, "r_co2_li_cal", "r_co2_li_cal.sd", "gmst_c", "gmst_c.sd")
+# S_CO2 
+p1 = ggplot(dat_g, aes(x = r_co2, y = gmst_c)) +
+  geom_errorbar(aes(xmin = r_co2 - r_co2.sd, xmax = r_co2 + r_co2.sd),
+                linewidth = .2, width = 0) +
+  geom_errorbar(aes(ymin = gmst_c - gmst_c.sd, ymax = gmst_c + gmst_c.sd),
+                linewidth = .2, width = 0) +
+  geom_errorbar(data = dat_ig, aes(x = r_co2, y = gmst_c,
+                                   xmin = r_co2 - r_co2.sd, xmax = r_co2 + r_co2.sd),
+                linewidth = .2, width = 0) +
+  geom_errorbar(data = dat_ig, aes(x = r_co2, y = gmst_c,
+                                   ymin = gmst_c - gmst_c.sd, ymax = gmst_c + gmst_c.sd),
+                linewidth = .2, width = 0) +
+  geom_point(aes(fill = time), size = 3, shape = 21) +
+  geom_smooth(method = "lm", fill = pal[1], alpha = .1,
+              linetype = "dashed", size = 1, col = pal[1]) +
+  scale_fill_brewer(palette = 1) +
+  ggnewscale::new_scale_fill() +
+  geom_point(data = dat_ig, 
+             aes(x = r_co2, y = gmst_c, fill = time), 
+             size = 3, shape = 21) +
+  scale_fill_brewer(palette = 7) +
+  geom_smooth(data = dat_ig,
+              aes(x = r_co2, y = gmst_c),
+              method = "lm", fill = pal[2], alpha = .1,
+              linetype = "dashed", size = 1, col = pal[2]) +
+  annotate("text", x = 1, y = -2, label = expression("R"^"2"*" = 0.27"), col = pal[2]) +
+  annotate("text", x = 1, y = -3, label = expression(italic(p)*" = 0.089"), col = pal[2]) +
+  annotate("text", x = 0, y = -5, label = expression("R"^"2"*" = 0.65"), col = pal[1]) +
+  annotate("text", x = 0, y = -6, label = expression(italic(p)*" = 0.005"), col = pal[1]) +
+  annotate("text", x = -2, y = 4, label = "a", size = 5, fontface = "bold") +
+  theme_bw() + theme +
+  theme(legend.position = "none") +
+  labs(x = expression(Delta*"F"[CO2]*" (W/m"^"2"*")"),
+       y = expression(paste(Delta*"GMST (", degree, "C)"))) +
+  theme(axis.title.x = element_text(margin = margin(t = -2)),
+        axis.title.y = element_text(margin = margin(r = -2)))
 
-ggarrange(p1,p2,p3,p4,p5,p6, nrow = 2, ncol = 3, align = "hv", common.legend = TRUE)
-ggsave("figures/Fig_3_climate_sensitivity.pdf", width = 7.5, height = 5.8)
+# S_CO2_LI 
+p2 = ggplot(dat_g, aes(x = r_co2_li, y = gmst_c)) +
+  geom_errorbar(aes(xmin = r_co2_li - r_co2_li.sd, xmax = r_co2_li + r_co2_li.sd),
+                linewidth = .2, width = 0) +
+  geom_errorbar(aes(ymin = gmst_c - gmst_c.sd, ymax = gmst_c + gmst_c.sd),
+                linewidth = .2, width = 0) +
+  geom_errorbar(data = dat_ig, aes(x = r_co2_li, y = gmst_c,
+                                   xmin = r_co2_li - r_co2_li.sd, xmax = r_co2_li + r_co2_li.sd),
+                linewidth = .2, width = 0) +
+  geom_errorbar(data = dat_ig, aes(x = r_co2_li, y = gmst_c,
+                                   ymin = gmst_c - gmst_c.sd, ymax = gmst_c + gmst_c.sd),
+                linewidth = .2, width = 0) +
+  geom_point(aes(fill = time), size = 3, shape = 21) +
+  geom_smooth(method = "lm", fill = pal[1], alpha = .1,
+              linetype = "dashed", size = 1, col = pal[1]) +
+  scale_fill_brewer(palette = 1) +
+  ggnewscale::new_scale_fill() +
+  geom_point(data = dat_ig, 
+             aes(x = r_co2_li, y = gmst_c, fill = time), 
+             size = 3, shape = 21) +
+  scale_fill_brewer(palette = 7) +
+  geom_smooth(data = dat_ig,
+              aes(x = r_co2_li, y = gmst_c),
+              method = "lm", fill = pal[2], alpha = .1,
+              linetype = "dashed", size = 1, col = pal[2]) +
+  annotate("text", x = 0.3, y = -2, label = expression("R"^"2"*" = 0.62"), col = pal[2]) +
+  annotate("text", x = 0.3, y = -3, label = expression(italic(p)*" = 0.007"), col = pal[2]) +
+  annotate("text", x = -1, y = -4.5, label = expression("R"^"2"*" = 0.87"), col = pal[1]) +
+  annotate("text", x = -1, y = -5.5, label = expression(italic(p)*" < 0.001"), col = pal[1]) +
+  annotate("text", x = -5, y = 4, label = "b", size = 5, fontface = "bold") +
+  theme_bw() + theme +
+  theme(legend.position = "none") +
+  labs(x = expression(Delta*"F"["CO2,LI"]*" (W/m"^"2"*")"),
+       y = expression(paste(Delta*"GMST (", degree, "C)"))) +
+  theme(axis.title.x = element_text(margin = margin(t = -2)),
+        axis.title.y = element_text(margin = margin(r = -2)))
+
+# S_CO2_LI_cal
+p3 = ggplot(dat_g, aes(x = r_co2_li_cal, y = gmst_c)) +
+  geom_errorbar(aes(xmin = r_co2_li_cal - r_co2_li_cal.sd, xmax = r_co2_li_cal + r_co2_li_cal.sd),
+                linewidth = .2, width = 0) +
+  geom_errorbar(aes(ymin = gmst_c - gmst_c.sd, ymax = gmst_c + gmst_c.sd),
+                linewidth = .2, width = 0) +
+  geom_errorbar(data = dat_ig, aes(x = r_co2_li_cal, y = gmst_c,
+                                   xmin = r_co2_li_cal - r_co2_li_cal.sd, xmax = r_co2_li_cal + r_co2_li_cal.sd),
+                linewidth = .2, width = 0) +
+  geom_errorbar(data = dat_ig, aes(x = r_co2_li_cal, y = gmst_c,
+                                   ymin = gmst_c - gmst_c.sd, ymax = gmst_c + gmst_c.sd),
+                linewidth = .2, width = 0) +
+  geom_point(aes(fill = time), size = 3, shape = 21) +
+  geom_smooth(method = "lm", fill = pal[1], alpha = .1,
+              linetype = "dashed", size = 1, col = pal[1]) +
+  scale_fill_brewer(palette = 1) +
+  ggnewscale::new_scale_fill() +
+  geom_point(data = dat_ig, 
+             aes(x = r_co2_li_cal, y = gmst_c, fill = time), 
+             size = 3, shape = 21) +
+  scale_fill_brewer(palette = 7) +
+  geom_smooth(data = dat_ig,
+              aes(x = r_co2_li_cal, y = gmst_c),
+              method = "lm", fill = pal[2], alpha = .1,
+              linetype = "dashed", size = 1, col = pal[2]) +
+  annotate("text", x = 0.5, y = -2, label = expression("R"^"2"*" = 0.50"), col = pal[2]) +
+  annotate("text", x = 0.5, y = -3, label = expression(italic(p)*" = 0.021"), col = pal[2]) +
+  annotate("text", x = -1, y = -4.5, label = expression("R"^"2"*" = 0.82"), col = pal[1]) +
+  annotate("text", x = -1, y = -5.5, label = expression(italic(p)*" < 0.001"), col = pal[1]) +
+  annotate("text", x = -3.8, y = 4, label = "c", size = 5, fontface = "bold") +
+  theme_bw() + theme +
+  theme(legend.position = "none") +
+  labs(x = expression(Delta*"F"["CO2,LI-cal"]*" (W/m"^"2"*")"),
+       y = expression(paste(Delta*"GMST (", degree, "C)"))) +
+  theme(axis.title.x = element_text(margin = margin(t = -2)),
+        axis.title.y = element_text(margin = margin(r = -2)))
+
+p1 + p2 + p3
 
 # PDFs ----
 nsyth = 1e5
@@ -204,42 +282,117 @@ slope_pdf = function(param, param.sd) {
 slope_gmst_c = slope_pdf("gmst_c", "gmst_c.sd")
 
 # plot ----
-plot_pdf = function(dat1, dat2, name, xmax, ymax) {
-  target = data.frame(
-    value = c(dat1, dat2),
-    group = factor(c(
-      rep("glacial", length(dat1)),
-      rep("interglacial", length(dat2))
-    ))
-  )
-  p1 = ggplot(target) +
-    geom_density(aes(x = value, fill = group, color = group), alpha = 0.3) +
-    scale_fill_manual(values = c(pal[1], pal[2])) +
-    scale_color_manual(values = c(pal[1], pal[2])) +
-    geom_vline(xintercept = median(dat1), color = pal[1], linewidth = 1, linetype = "dashed") +
-    geom_vline(xintercept = median(dat2), color = pal[2], linewidth = 1, linetype = "dashed") +
-    theme_bw() + theme +
-    scale_x_continuous(limits = c(0, xmax)) +
-    scale_y_continuous(limits = c(0, ymax)) +
-    labs(title = name,
-         x = "slope", y = "density") +
-    guides(fill = "none", color = "none") +
-    annotate("text", label = round(median(dat1), 2), x = xmax*.8, y = ymax*.8, color = pal[1]) +
-    annotate("text", label = round(median(dat2), 2), x = xmax*.8, y = ymax*.6, color = pal[2]) +
-    annotate("text", label = paste("d =", round(cohen.d(dat1, dat2)$estimate, 2)), x = xmax*.8, y = ymax*.4) +
-    annotate("text", label = paste("p =", round(t.test(dat1, dat2)$p.value, 2)), x = xmax*.8, y = ymax*.2)
-  return(p1)
-}
-
 t.test(slope_gmst_c[[5]], slope_gmst_c[[6]])
 cohen.d(slope_gmst_c[[1]], slope_gmst_c[[2]])
+# S_CO2
+target = data.frame(
+  value = c(slope_gmst_c[[1]], slope_gmst_c[[2]]),
+  group = factor(c(
+    rep("glacial", length(slope_gmst_c[[1]])),
+    rep("interglacial", length(slope_gmst_c[[2]]))
+  ))
+)
+p4 = ggplot(target) +
+  geom_density(aes(x = value, fill = group, color = group), alpha = 0.3) +
+  scale_fill_manual(values = c(pal[1], pal[2])) +
+  scale_color_manual(values = c(pal[1], pal[2])) +
+  geom_vline(xintercept = median(slope_gmst_c[[1]]), color = pal[1], linewidth = 1) +
+  geom_vline(xintercept = (median(slope_gmst_c[[1]]) - sd(slope_gmst_c[[1]])), 
+             color = pal[1], linetype = "dashed") +
+  geom_vline(xintercept = (median(slope_gmst_c[[1]]) + sd(slope_gmst_c[[1]])), 
+             color = pal[1], linetype = "dashed") +
+  geom_vline(xintercept = median(slope_gmst_c[[1]]), color = pal[1], linewidth = 1) +
+  geom_vline(xintercept = median(slope_gmst_c[[2]]), color = pal[2], linewidth = 1) +
+  geom_vline(xintercept = (median(slope_gmst_c[[2]]) - sd(slope_gmst_c[[2]])), 
+             color = pal[2], linetype = "dashed") +
+  geom_vline(xintercept = (median(slope_gmst_c[[2]]) + sd(slope_gmst_c[[2]])), 
+             color = pal[2], linetype = "dashed") +
+  theme_bw() + theme +
+  scale_x_continuous(limits = c(0, 6)) +
+  labs(x = "slope", 
+       y = "density") +
+  guides(fill = "none", color = "none") +
+  annotate("text", label = expression("S"[CO2]), x = 5, y = .7, size = 6) +
+  annotate("text", x = 5, y = .4, label = expression(italic(d)*" = 0.50")) +
+  annotate("text", x = 5, y = .3, label = expression(italic(p)*" < 0.001")) +
+  annotate("text", x = .3, y = .75, size = 5, label = "d", fontface = "bold") +
+  theme(axis.title.x = element_text(margin = margin(t = -2)),
+        axis.title.y = element_text(margin = margin(r = -2)))
 
-p1 = plot_pdf(slope_gmst_c[[1]], slope_gmst_c[[2]], "R_CO2",6,0.84)
-p2 = plot_pdf(slope_gmst_c[[3]], slope_gmst_c[[4]], "R_CO2_LI",6,1.9)
-p3 = plot_pdf(slope_gmst_c[[5]], slope_gmst_c[[6]], "R_total",6,1.7)
+# S_CO2_LI
+target = data.frame(
+  value = c(slope_gmst_c[[3]], slope_gmst_c[[4]]),
+  group = factor(c(
+    rep("glacial", length(slope_gmst_c[[3]])),
+    rep("interglacial", length(slope_gmst_c[[4]]))
+  ))
+)
+p5 = ggplot(target) +
+  geom_density(aes(x = value, fill = group, color = group), alpha = 0.3) +
+  scale_fill_manual(values = c(pal[1], pal[2])) +
+  scale_color_manual(values = c(pal[1], pal[2])) +
+  geom_vline(xintercept = median(slope_gmst_c[[3]]), color = pal[1], linewidth = 1) +
+  geom_vline(xintercept = (median(slope_gmst_c[[3]]) - sd(slope_gmst_c[[3]])), 
+             color = pal[1], linetype = "dashed") +
+  geom_vline(xintercept = (median(slope_gmst_c[[3]]) + sd(slope_gmst_c[[3]])), 
+             color = pal[1], linetype = "dashed") +
+  geom_vline(xintercept = median(slope_gmst_c[[3]]), color = pal[1], linewidth = 1) +
+  geom_vline(xintercept = median(slope_gmst_c[[4]]), color = pal[2], linewidth = 1) +
+  geom_vline(xintercept = (median(slope_gmst_c[[4]]) - sd(slope_gmst_c[[4]])), 
+             color = pal[2], linetype = "dashed") +
+  geom_vline(xintercept = (median(slope_gmst_c[[4]]) + sd(slope_gmst_c[[4]])), 
+             color = pal[2], linetype = "dashed") +
+  theme_bw() + theme +
+  scale_x_continuous(limits = c(0, 3)) +
+  labs(x = "slope", 
+       y = "density") +
+  guides(fill = "none", color = "none") +
+  annotate("text", label = expression("S"["CO2,LI"]), x = 2.5, y = 1.5, size = 6) +
+  annotate("text", x = 2.5, y = .7, label = expression(italic(d)*" = 1.34")) +
+  annotate("text", x = 2.5, y = .5, label = expression(italic(p)*" < 0.001")) +
+  annotate("text", x = .2, y = 1.7, size = 5, label = "e", fontface = "bold") +
+  theme(axis.title.x = element_text(margin = margin(t = -2)),
+        axis.title.y = element_text(margin = margin(r = -2)))
 
-ggarrange(p1,p2,p3,nrow = 1, ncol = 3, align = "hv")
-ggsave("figures/Fig_3_climate_sensitivity_pdfs.pdf", width = 7.8, height = 3) 
+# S_CO2_LI_cal
+target = data.frame(
+  value = c(slope_gmst_c[[5]], slope_gmst_c[[6]]),
+  group = factor(c(
+    rep("glacial", length(slope_gmst_c[[5]])),
+    rep("interglacial", length(slope_gmst_c[[6]]))
+  ))
+)
+p6 = ggplot(target) +
+  geom_density(aes(x = value, fill = group, color = group), alpha = 0.3) +
+  scale_fill_manual(values = c(pal[1], pal[2])) +
+  scale_color_manual(values = c(pal[1], pal[2])) +
+  geom_vline(xintercept = median(slope_gmst_c[[5]]), color = pal[1], linewidth = 1) +
+  geom_vline(xintercept = (median(slope_gmst_c[[5]]) - sd(slope_gmst_c[[5]])), 
+             color = pal[1], linetype = "dashed") +
+  geom_vline(xintercept = (median(slope_gmst_c[[5]]) + sd(slope_gmst_c[[5]])), 
+             color = pal[1], linetype = "dashed") +
+  geom_vline(xintercept = median(slope_gmst_c[[5]]), color = pal[1], linewidth = 1) +
+  geom_vline(xintercept = median(slope_gmst_c[[6]]), color = pal[2], linewidth = 1) +
+  geom_vline(xintercept = (median(slope_gmst_c[[6]]) - sd(slope_gmst_c[[6]])), 
+             color = pal[2], linetype = "dashed") +
+  geom_vline(xintercept = (median(slope_gmst_c[[6]]) + sd(slope_gmst_c[[6]])), 
+             color = pal[2], linetype = "dashed") +
+  theme_bw() + theme +
+  scale_x_continuous(limits = c(0, 3)) +
+  labs(x = "slope", 
+       y = "density") +
+  guides(fill = "none", color = "none") +
+  annotate("text", label = expression("S"[total]), x = 2.5, y = 1.4, size = 6) +
+  annotate("text", x = 2.5, y = .7, label = expression(italic(d)*" = 0.29")) +
+  annotate("text", x = 2.5, y = .5, label = expression(italic(p)*" < 0.001")) +
+  annotate("text", x = .2, y = 1.5, size = 5, label = "f", fontface = "bold") +
+  theme(axis.title.x = element_text(margin = margin(t = -2)),
+        axis.title.y = element_text(margin = margin(r = -2)))
+
+p1 + p2 + p3 + p4 + p5 + p6 +
+  plot_layout(ncol = 3)
+
+ggsave("figures/Fig_3_climate_sensitivity_pdfs.pdf", width = 8.7, height = 6.2) 
 
 # fing the 95% confidence intervals
 cf_95 = function(slopes){

@@ -1,13 +1,14 @@
 rm(list = ls())
-pacman::p_load(tidyverse, ggpubr, readxl)
+pacman::p_load(tidyverse, ggpubr, readxl, patchwork, showtext)
+showtext_auto()
 source('plot/functions.R')
 theme = theme(axis.text.x = element_text(margin = margin(t = 0.1, unit = "cm")),
               axis.text.y = element_text(margin = margin(r = 0.1, unit = "cm")),
               axis.ticks.length=unit(0.15, "cm"),
               axis.ticks = element_line(colour = "black"),
-              text = element_text(color = "black", size = 10),
+              text = element_text(family = "Arial"),
               axis.title = element_text(size = 10), 
-              axis.text = element_text(size = 10),
+              axis.text = element_text(size = 10, color = "black"),
               plot.title = element_text(hjust = 0.1, vjust = -10),
               legend.text = element_text(size = 10),
               legend.title = element_text(size = 10),
@@ -135,9 +136,11 @@ p1 = ggplot(benthic_g, aes(x = time, y = d18O)) +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "navy") +
   geom_line(data = min_values, aes(group = 1, x = time, y = d18O), linetype = "dashed", color = "gray") +
   geom_line(data = max_values, aes(group = 1, x = time, y = d18O), linetype = "dashed", color = "gray") +
-  scale_fill_viridis_d() +
-  theme_bw() + theme + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  annotate("text", x = 9, y = 5, label = "a", fontface = "bold") +
+  theme_bw() + theme + 
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        plot.margin = margin(0, 0, 0, 0)) +
   scale_y_reverse(limits = c(5.1, 2.9)) +
   xlab("") + ylab(expression(delta^"18"*"O (\u2030)"))
 
@@ -149,9 +152,11 @@ p2 = ggplot(bwt_g, aes(x = time, y = BWT)) +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "navy") +
   geom_line(data = min_values, aes(group = 1, x = time, y = BWT, color = "gray"), linetype = "dashed", color = "gray") +
   geom_line(data = max_values, aes(group = 1, x = time, y = BWT, color = "gray"), linetype = "dashed", color = "gray") +
-  scale_fill_viridis_d() +
-  theme_bw() + theme + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  annotate("text", x = 9, y = -1.5, label = "b", fontface = "bold") +
+  theme_bw() + theme + 
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        plot.margin = margin(0, 0, 0, 0)) +
   scale_y_continuous(limits = c(-2, 6.5), breaks = seq(0, 6, 2)) +
   xlab("") + ylab("BWT (°C)")
 
@@ -163,9 +168,11 @@ p3 = ggplot(wpwp.sst_g, aes(x = time, y = SST)) +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "navy") +
   geom_line(data = min_values, aes(group = 1, x = time, y = SST), linetype = "dashed", color = "gray") +
   geom_line(data = max_values, aes(group = 1, x = time, y = SST), linetype = "dashed", color = "gray") +
-  scale_fill_viridis_d() +
-  theme_bw() + theme + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  annotate("text", x = 9, y = 24.5, label = "c", fontface = "bold") +
+  theme_bw() + theme + 
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        plot.margin = margin(0, 0, 0, 0)) +
   scale_y_continuous(limits = c(24, 31)) +
   xlab("") + ylab("WPWP SST (°C)")
 
@@ -177,8 +184,11 @@ p4 = ggplot(gmst_g, aes(x = time, y = GMST)) +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "navy") +
   geom_line(data = min_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
   geom_line(data = max_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
-  theme_bw() + theme + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  annotate("text", x = 9, y = -7, label = "d", fontface = "bold") +
+  theme_bw() + theme + 
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        plot.margin = margin(0,0,0,0)) +
   scale_y_continuous(limits = c(-8, 3)) +
   labs(x = "", y = expression(paste("GMST (", degree, "C)")))
 
@@ -190,8 +200,11 @@ p5 = ggplot(co2_g, aes(x = time, y = CO2)) +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "navy") +
   geom_line(data = min_values, aes(group = 1, x = time, y = CO2), linetype = "dashed", color = "gray") +
   geom_line(data = max_values, aes(group = 1, x = time, y = CO2), linetype = "dashed", color = "gray") +
-  theme_bw() + theme + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  annotate("text", x = 9, y = 150, label = "e", fontface = "bold") +
+  theme_bw() + theme +
+  theme(legend.position = "none",
+        plot.margin = margin(0,0,0,0),
+        axis.text.x = element_text(angle = 30, hjust = 1)) +
   scale_y_continuous(limits = c(120, 450)) +
   xlab("") + ylab(expression("CO"[2]*" (ppm)"))
 
@@ -207,9 +220,11 @@ p6 = ggplot(benthic_ig, aes(x = time, y = d18O)) +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "firebrick") +
   geom_line(data = min_values, aes(group = 1, x = time, y = d18O), linetype = "dashed", color = "gray") +
   geom_line(data = max_values, aes(group = 1, x = time, y = d18O), linetype = "dashed", color = "gray") +
-  scale_fill_viridis_d() +
-  theme_bw() + theme + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  annotate("text", x = 9, y = 5, label = "f", fontface = "bold") +
+  theme_bw() + theme + 
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        plot.margin = margin(0, 0, 0, 10)) +
   scale_y_reverse(limits = c(5.1, 2.9)) +
   xlab("") + ylab(expression(delta^"18"*"O (\u2030)"))
 
@@ -221,9 +236,11 @@ p7 = ggplot(bwt_ig, aes(x = time, y = BWT)) +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "firebrick") +
   geom_line(data = min_values, aes(group = 1, x = time, y = BWT, color = "gray"), linetype = "dashed", color = "gray") +
   geom_line(data = max_values, aes(group = 1, x = time, y = BWT, color = "gray"), linetype = "dashed", color = "gray") +
-  scale_fill_viridis_d() +
-  theme_bw() + theme + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  annotate("text", x = 9, y = -1.5, label = "g", fontface = "bold") +
+  theme_bw() + theme + 
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        plot.margin = margin(0, 0, 0, 10)) +
   scale_y_continuous(limits = c(-2, 6.5), breaks = seq(0, 6, 2)) +
   xlab("") + ylab("BWT (°C)")
 
@@ -235,9 +252,11 @@ p8 = ggplot(wpwp.sst_ig, aes(x = time, y = SST)) +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "firebrick") +
   geom_line(data = min_values, aes(group = 1, x = time, y = SST), linetype = "dashed", color = "gray") +
   geom_line(data = max_values, aes(group = 1, x = time, y = SST), linetype = "dashed", color = "gray") +
-  scale_fill_viridis_d() +
-  theme_bw() + theme + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  annotate("text", x = 9, y = -24.5, label = "h", fontface = "bold") +
+  theme_bw() + theme + 
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        plot.margin = margin(0, 0, 0, 10)) +
   scale_y_continuous(limits = c(24, 31)) +
   xlab("") + ylab("WPWP SST (°C)")
 
@@ -249,8 +268,11 @@ p9 = ggplot(gmst_ig, aes(x = time, y = GMST)) +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "firebrick") +
   geom_line(data = min_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
   geom_line(data = max_values, aes(group = 1, x = time, y = GMST), linetype = "dashed", color = "gray") +
-  theme_bw() + theme + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  annotate("text", x = 9, y = -7, label = "i", fontface = "bold") +
+  theme_bw() + theme + 
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        plot.margin = margin(0, 0, 0, 10)) +
   scale_y_continuous(limits = c(-8, 3)) +
   labs(x = "", y = expression(paste("GMST (", degree, "C)")))
 
@@ -262,14 +284,15 @@ p10 = ggplot(co2_ig, aes(x = time, y = CO2)) +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "firebrick") +
   geom_line(data = min_values, aes(group = 1, x = time, y = CO2), linetype = "dashed", color = "gray") +
   geom_line(data = max_values, aes(group = 1, x = time, y = CO2), linetype = "dashed", color = "gray") +
-  theme_bw() + theme + theme(legend.position = "none") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  annotate("text", x = 9, y = 150, label = "j", fontface = "bold") +
+  theme_bw() + theme + 
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 30, hjust = 1),
+        plot.margin = margin(0, 0, 0, 10)) +
   scale_y_continuous(limits = c(120, 450)) +
   xlab("") + ylab(expression("CO"[2]*" (ppm)"))
 
-ggarrange(p1,p6,p2,p7,p3,p8,p4,p9,p5,p10,
-          nrow = 5, ncol = 2, align = "hv",
-          labels = c("a", "b", "c", "d", "e", "f", "g", "h", "i", "j"))
-# ggarrange(p1,p5,p4,p8, nrow = 2, ncol = 2, align = "hv")
-ggsave("figures/Fig_2_time_series_proxy_data_boxplot_500ky.pdf", width = 6.7, height = 11)
+p1 + p6 + p2 + p7 + p3 + p8 + p4 + p9 + p5 + p10 +
+  plot_layout(ncol = 2)
+ggsave("figures/Fig_2_time_series_proxy_data_boxplot_500ky.pdf", width = 6.7, height = 10)
 
